@@ -1,0 +1,3 @@
+[submodule "labelous_ti/label_app/LabelMeAnnotationTool"]
+	path = labelous_ti/label_app/LabelMeAnnotationTool
+	url = https://github.com/tpwrules/LabelMeAnnotationTool
