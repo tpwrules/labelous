@@ -1,8 +1,13 @@
 from django.shortcuts import render
 from django.http import HttpResponse, Http404
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+from django.core.exceptions import SuspiciousOperation
+from django.db import transaction
 
 from xml.sax.saxutils import escape as xml_escape
+import defusedxml.ElementTree
+import types
 
 from . import models
 import image_mgr.models
@@ -90,3 +95,165 @@ def get_annotation_xml(request, image_id):
 
     # django will automatically concatenate our xml strings
     return HttpResponse(xml, content_type="text/xml")
+
+
+# handle a returned annotation XML document. note that we get no additional
+# information, just what's inside the xml. also note that we have to be
+# intensely suspicious of its contents, because the labeling tool performs no
+# validation of any kind at all whatsoever (and any whacko could POST whatever
+# XML they wanted to anyway). if anything is weird, we throw a
+# SuspiciousOperation exception, which causes the tool to reload and get the
+# correct annotations back from the database.
+
+# handle understanding the document and updating the database. if this raises
+# any kind of exception, the database transaction is rolled back.
+def process_annotation_xml(request, root):
+    if root.tag != "annotation":
+        raise SuspiciousOperation("not an annotation")
+
+    # look up the image we are allegedly annotating
+    try:
+        filename = root.find("filename").text
+        if not filename.startswith("img") or not filename.endswith(".jpg"):
+            raise Exception("invalid filename {}".format(filename))
+        image_id = int(filename[3:-4])
+        image = image_mgr.models.Image.objects.get(pk=image_id)
+        if not image.visible:
+            raise Exception("invisible image")
+    except Exception as e:
+        raise SuspiciousOperation("invalid image") from e
+
+    # look up the annotation this document is allegedly for
+    try:
+        anno_id = int(root.find("c_anno_id").text)
+        annotation = models.Annotation.objects.get(
+            annotator=request.user, image=image, locked=False, deleted=False)
+        if annotation.deleted:
+            raise Exception("deleted annotation")
+    except Exception as e:
+        raise SuspiciousOperation("invalid anno id") from e
+
+    # pull out all the polygons defined in this document. once that is done, we
+    # will apply them to the database.
+    anno_polygons = []
+    anno_poly_ids = set()
+    for obj_tag in root.findall("object"):
+        anno_polygon = types.SimpleNamespace()
+        try:
+            # newly-created polygons won't have IDs
+            if obj_tag.find("c_poly_id") is None:
+                anno_polygon.id = None
+            else:
+                # it has an ID and it must be correct
+                anno_polygon.id = int(obj_tag.find("c_poly_id").text)
+                if anno_polygon.id in anno_poly_ids:
+                    raise Exception("duplicate id")
+                anno_poly_ids.add(anno_polygon.id)
+
+            anno_polygon.name = obj_tag.find("name").text
+            if anno_polygon.name == "":
+                raise Exception("empty name")
+
+            deleted = int(obj_tag.find("deleted").text)
+            if deleted not in (0, 1):
+                raise Exception("bad deleted")
+            anno_polygon.deleted = False if deleted == 0 else True
+
+            occluded = obj_tag.find("occluded").text
+            if occluded not in ("no", "yes"):
+                raise Exception("bad occluded")
+            anno_polygon.occluded = False if occluded == "no" else True
+
+            try:
+                attributes = obj_tag.find("attributes").text
+            except:
+                attributes = None
+            anno_polygon.attributes = "" if attributes == None else attributes
+
+            anno_polygon.points = []
+            try:
+                for point_tag in obj_tag.find("polygon").findall("pt"):
+                    # this double-conversion makes sure the numbers are received
+                    # with the same precision we send them, and thus avoids
+                    # problems where the number didn't change but isn't quite
+                    # equal to what the database has.
+                    x = float("{:.2f}".format(float(point_tag.find("x").text)))
+                    y = float("{:.2f}".format(float(point_tag.find("y").text)))
+                    anno_polygon.points.extend((x, y))
+            except:
+                raise Exception("bad points")
+
+            anno_polygons.append(anno_polygon)
+        except Exception as e:
+            raise SuspiciousOperation("invalid polygon") from e
+
+    # get the polygons attached to this annotation that can be shown
+    polygons = annotation.polygons.filter(deleted=False)
+    # and map them by their ID
+    polygons = {p.pk: p for p in polygons}
+    with transaction.atomic():
+        # mesaure if anything changed in the annotation so we can update its
+        # last edited time.
+        annotation_changed = False
+        for anno_poly in anno_polygons:
+            # mesaure if anything changed in the polygon so we can update its
+            # last edited time.
+            polygon_changed = False
+            poly = polygons[anno_poly.id]
+
+            if poly.deleted and not anno_poly.deleted:
+                raise SuspiciousOperation("undeleting is verboten")
+
+            if poly.label_as_str != anno_poly.name: polygon_changed = True
+            if poly.notes != anno_poly.attributes: polygon_changed = True
+            if poly.occluded != anno_poly.occluded: polygon_changed = True
+            if poly.points != anno_poly.points: polygon_changed = True
+            if poly.deleted != anno_poly.deleted: polygon_changed = True
+            if polygon_changed: print("poly changed!!")
+
+            if polygon_changed:
+                poly.label_as_str = anno_poly.name
+                poly.notes = anno_poly.attributes
+                poly.occluded = anno_poly.occluded
+                poly.points = anno_poly.points
+                poly.deleted = anno_poly.deleted
+                poly.save()
+                annotation_changed = True
+
+        if annotation_changed:
+            annotation.save(update_fields=('last_edit_time',))
+
+
+# parse the XML data. the request can't be, by default, bigger than 2.5MiB, so
+# it shouldn't consume too much memory. the options given to parse prevent
+# expansion attacks and external sourcing garbage.
+def parse_annotation_xml(request):
+    try:
+        # empirically, the request seems to be utf8
+        xml = defusedxml.ElementTree.fromstring(request.body.decode("utf8"),
+            forbid_dtd=True, forbid_entities=True, forbid_external=True)
+    except Exception as e:
+        raise SuspiciousOperation("xml parse failed") from e
+
+    try:
+        process_annotation_xml(request, xml)
+    except SuspiciousOperation:
+        raise
+    except Exception as e:
+        raise SuspiciousOperation("xml process failed") from e
+
+# DANGER!!!! CSRF should be used to prevent forged annotations from being
+# uploaded. but that would require hacking labelme to properly transmit the
+# token. apparently django stores it in a cookie so this could be done later.
+@csrf_exempt
+def post_annotation_xml(request):
+    try:
+        parse_annotation_xml(request)
+    except Exception:
+        import traceback
+        traceback.print_exc()
+        raise
+
+    # since the data was posted by XHR, we are expected to reply with SOME kind
+    # of XML. what that is doesn't matter.
+    return HttpResponse("<nop/>", content_type="text/xml")
