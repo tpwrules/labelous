@@ -17,6 +17,6 @@ urlpatterns = [
         {"dir": "Icons"}),
     re_path(r'^Images/f/img(?P<image_id>[0-9]+).jpg$',
         image_mgr.views.image_file),
-    path('Annotations/f/<file>', tool_static_views.lm_static,
-        {"dir": "Annotations/f"}),
+    re_path(r'^Annotations/f/img(?P<image_id>[0-9]+).xml$',
+        views.get_annotation_xml),
 ]
