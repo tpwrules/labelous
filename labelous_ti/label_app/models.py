@@ -16,7 +16,7 @@ class Image(models.Model):
     uploader = models.ForeignKey(User, on_delete=models.CASCADE)
     # upload_time: time when this image was uploaded. automatically set when
     # this object is created.
-    upload_time = models.DateTimeField(auto_now_add=False)
+    upload_time = models.DateTimeField(auto_now_add=True)
     # priority: some metric of how important this image is. not sure what
     # it will be used for yet, if at all.
     priority = models.FloatField(default=1)
