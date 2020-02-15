@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, re_path
 
 from . import views
 from . import tool_static_views
@@ -14,8 +14,7 @@ urlpatterns = [
         {"dir": "annotationTools/js"}),
     path('Icons/<file>', tool_static_views.lm_static,
         {"dir": "Icons"}),
-    path('Images/f/<file>', tool_static_views.lm_static,
-        {"dir": "Images/f"}),
+    re_path(r'^Images/f/img(?P<image_id>[0-9]+).jpg$', views.image_file),
     path('Annotations/f/<file>', tool_static_views.lm_static,
         {"dir": "Annotations/f"}),
 ]

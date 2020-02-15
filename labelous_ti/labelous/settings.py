@@ -39,6 +39,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'label_app.apps.LabelAppConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -129,3 +130,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# internal settings
+
+# where the images are stored
+import pathlib
+L_IMAGE_PATH = pathlib.Path(
+    "/Users/thomaswatson/projects/labelous/test_images").resolve(strict=True)
