@@ -39,6 +39,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'image_mgr.apps.ImageMgrConfig',
     'label_app.apps.LabelAppConfig',
     'django.contrib.admin',
     'django.contrib.auth',

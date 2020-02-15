@@ -2,6 +2,7 @@ from django.urls import path, re_path
 
 from . import views
 from . import tool_static_views
+import image_mgr.views
 
 urlpatterns = [
 
@@ -14,7 +15,8 @@ urlpatterns = [
         {"dir": "annotationTools/js"}),
     path('Icons/<file>', tool_static_views.lm_static,
         {"dir": "Icons"}),
-    re_path(r'^Images/f/img(?P<image_id>[0-9]+).jpg$', views.image_file),
+    re_path(r'^Images/f/img(?P<image_id>[0-9]+).jpg$',
+        image_mgr.views.image_file),
     path('Annotations/f/<file>', tool_static_views.lm_static,
         {"dir": "Annotations/f"}),
 ]
