@@ -8,6 +8,7 @@ from django.db import transaction
 from xml.sax.saxutils import escape as xml_escape
 import defusedxml.ElementTree
 import types
+from datetime import datetime, timezone
 
 from . import models
 import image_mgr.models
@@ -217,10 +218,12 @@ def process_annotation_xml(request, root):
                 poly.occluded = anno_poly.occluded
                 poly.points = anno_poly.points
                 poly.deleted = anno_poly.deleted
+                poly.last_edit_time = datetime.now(timezone.utc)
                 poly.save()
                 annotation_changed = True
 
         if annotation_changed:
+            annotation.last_edit_time = datetime.now(timezone.utc)
             annotation.save(update_fields=('last_edit_time',))
 
 

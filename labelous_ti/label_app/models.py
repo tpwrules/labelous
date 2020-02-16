@@ -23,7 +23,7 @@ class Annotation(models.Model):
     # when this annotation was created
     creation_time = models.DateTimeField(auto_now_add=True)
     # when this annotation, or any of its polygons, was last changed.
-    last_edit_time = models.DateTimeField(auto_now=True)
+    last_edit_time = models.DateTimeField()
 
 def validate_is_points(value):
     if len(value) % 2 != 0:
@@ -37,7 +37,7 @@ class Polygon(models.Model):
     # when this polygon was created
     creation_time = models.DateTimeField(auto_now_add=True)
     # when this polygon was last edited
-    last_edit_time = models.DateTimeField(auto_now=True)
+    last_edit_time = models.DateTimeField()
     # this polygon's label. for now a string, but will be changed later
     label_as_str = models.CharField(max_length=255)
     # any notes the user attached to this polygon
