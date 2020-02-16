@@ -22,6 +22,8 @@ class Annotation(models.Model):
     deleted = models.BooleanField(default=False)
     # when this annotation was created
     creation_time = models.DateTimeField(auto_now_add=True)
+    # annotation updates are only accepted if they have this key
+    edit_key = models.BinaryField(max_length=16)
     # when this annotation, or any of its polygons, was last changed.
     last_edit_time = models.DateTimeField()
 
@@ -49,6 +51,9 @@ class Polygon(models.Model):
     # occluded: if the polygon is considered occluded by another object.
     # the annotator has a checkbox to set it.
     occluded = models.BooleanField(default=False)
+    # index of the polygon within the annotation file; used to update polygons
+    # correctly
+    anno_index = models.IntegerField(null=True, blank=True, default=None)
     # locked: if true, the annotator cannot touch it anymore
     locked = models.BooleanField(default=False)
     # deleted: if true, polygon can't be seen anymore
