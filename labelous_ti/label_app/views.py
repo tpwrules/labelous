@@ -242,6 +242,8 @@ def process_annotation_xml(request, root):
     # will apply them to the database.
     anno_polygons = []
     anno_poly_ids = set()
+    # iterate through objects in order, keeping track of their index
+    curr_index = 0
     for obj_tag in root.findall("object"):
         anno_polygon = types.SimpleNamespace()
         try:
@@ -254,6 +256,9 @@ def process_annotation_xml(request, root):
                 if anno_polygon.id in anno_poly_ids:
                     raise Exception("duplicate id")
                 anno_poly_ids.add(anno_polygon.id)
+
+            anno_polygon.index = curr_index
+            curr_index = curr_index + 1
 
             anno_polygon.name = obj_tag.find("name").text
             if anno_polygon.name == "":
@@ -295,7 +300,10 @@ def process_annotation_xml(request, root):
     # get the polygons attached to this annotation that can be shown
     polygons = annotation.polygons.filter(deleted=False)
     # and map them by their ID
-    polygons = {p.pk: p for p in polygons}
+    polygons_by_id = {p.pk: p for p in polygons}
+    # plus index in the file
+    polygons_by_index = {p.anno_index: p
+        for p in polygons_by_id.values() if p.anno_index is not None}
     with transaction.atomic():
         # reload the annotation, this time while selected for update. this
         # ensures that nobody else can change it until the transaction finishes.
@@ -314,16 +322,31 @@ def process_annotation_xml(request, root):
             # mesaure if anything changed in the polygon so we can update its
             # last edited time.
             polygon_changed = False
-            poly = polygons[anno_poly.id]
 
-            if poly.deleted and not anno_poly.deleted:
-                raise SuspiciousOperation("undeleting is verboten")
+            if anno_poly.id is not None:
+                # we want to raise an exception if the id is invalid in some
+                # manner. note that if it is deleted, we won't have loaded it.
+                if not anno_poly.deleted:
+                    poly = polygons_by_id[anno_poly.id]
+                else:
+                    continue
+            else:
+                try:
+                    # if it was created under this edit key, we need to find it
+                    # by index instead
+                    poly = polygons_by_index[anno_poly.index]
+                except KeyError:
+                    # if we can't find it by index, it must be new
+                    poly = models.Polygon(
+                        annotation=annotation, anno_index=anno_poly.index)
+                    polygon_changed = True
 
-            if poly.label_as_str != anno_poly.name: polygon_changed = True
-            if poly.notes != anno_poly.attributes: polygon_changed = True
-            if poly.occluded != anno_poly.occluded: polygon_changed = True
-            if poly.points != anno_poly.points: polygon_changed = True
-            if poly.deleted != anno_poly.deleted: polygon_changed = True
+            if polygon_changed == True: pass
+            elif poly.label_as_str != anno_poly.name: polygon_changed = True
+            elif poly.notes != anno_poly.attributes: polygon_changed = True
+            elif poly.occluded != anno_poly.occluded: polygon_changed = True
+            elif poly.points != anno_poly.points: polygon_changed = True
+            elif poly.deleted != anno_poly.deleted: polygon_changed = True
             if polygon_changed: print("poly changed!!")
 
             if polygon_changed:
