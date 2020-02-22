@@ -297,8 +297,8 @@ def process_annotation_xml(request, root):
         except Exception as e:
             raise SuspiciousOperation("invalid polygon") from e
 
-    # get the polygons attached to this annotation that can be shown
-    polygons = annotation.polygons.filter(deleted=False)
+    # get the polygons attached to this annotation
+    polygons = annotation.polygons.filter()
     # and map them by their ID
     polygons_by_id = {p.pk: p for p in polygons}
     # plus index in the file
@@ -324,12 +324,7 @@ def process_annotation_xml(request, root):
             polygon_changed = False
 
             if anno_poly.id is not None:
-                # we want to raise an exception if the id is invalid in some
-                # manner. note that if it is deleted, we won't have loaded it.
-                if not anno_poly.deleted:
-                    poly = polygons_by_id[anno_poly.id]
-                else:
-                    continue
+                poly = polygons_by_id[anno_poly.id]
             else:
                 try:
                     # if it was created under this edit key, we need to find it
@@ -340,6 +335,10 @@ def process_annotation_xml(request, root):
                     poly = models.Polygon(
                         annotation=annotation, anno_index=anno_poly.index)
                     polygon_changed = True
+
+            # prevent the ressurection of deleted polygons
+            if poly.deleted:
+                anno_poly.deleted = True
 
             if polygon_changed == True: pass
             elif poly.label_as_str != anno_poly.name: polygon_changed = True
