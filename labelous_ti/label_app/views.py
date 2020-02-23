@@ -297,8 +297,8 @@ def process_annotation_xml(request, root):
         except Exception as e:
             raise SuspiciousOperation("invalid polygon") from e
 
-    # get the polygons attached to this annotation
-    polygons = annotation.polygons.filter()
+    # get the polygons attached to this annotation that we would have shown
+    polygons = annotation.polygons.filter(deleted=False)
     # and map them by their ID
     polygons_by_id = {p.pk: p for p in polygons}
     # plus index in the file
@@ -324,7 +324,14 @@ def process_annotation_xml(request, root):
             polygon_changed = False
 
             if anno_poly.id is not None:
-                poly = polygons_by_id[anno_poly.id]
+                try:
+                    poly = polygons_by_id[anno_poly.id]
+                except KeyError:
+                    # if it was deleted, we wouldn't have loaded it
+                    if anno_poly.deleted:
+                        continue
+                    else:
+                        raise
             else:
                 try:
                     # if it was created under this edit key, we need to find it
@@ -332,13 +339,13 @@ def process_annotation_xml(request, root):
                     poly = polygons_by_index[anno_poly.index]
                 except KeyError:
                     # if we can't find it by index, it must be new
-                    poly = models.Polygon(
-                        annotation=annotation, anno_index=anno_poly.index)
-                    polygon_changed = True
-
-            # prevent the ressurection of deleted polygons
-            if poly.deleted:
-                anno_poly.deleted = True
+                    # (or deleted, and we didn't load it)
+                    if anno_poly.deleted:
+                        continue
+                    else:
+                        poly = models.Polygon(
+                            annotation=annotation, anno_index=anno_poly.index)
+                        polygon_changed = True
 
             if polygon_changed == True: pass
             elif poly.label_as_str != anno_poly.name: polygon_changed = True
