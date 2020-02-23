@@ -404,3 +404,57 @@ def post_annotation_xml(request):
     # of XML. what that is doesn't matter. eventually it will be quasi-related
     # to any error so the tool can take appropriate action.
     return HttpResponse("<nop/>", content_type="text/xml")
+
+# return the next annotation based on the image given in the request
+def next_annotation(request):
+    filename = request.GET["image"]
+    try:
+        if not filename.startswith("img") or not filename.endswith(".jpg"):
+            raise Exception("invalid filename {}".format(filename))
+        image_id = int(filename[3:-4])
+    except Exception as e:
+        raise SuspiciousOperation("bad query") from e
+    
+    # search for the next annotation: one whose image has a bigger primary key
+    # than the given image. an arbitrary but consistent ordering.
+    try:
+        next_annotation = models.Annotation.objects.filter(
+            image__pk__gt=image_id, annotator=request.user,
+            deleted=False).order_by("pk")[0:1].get()
+    except models.Annotation.DoesNotExist:
+        # we must be at the end of the loop. get the first annotation instead
+        next_annotation = models.Annotation.objects.filter(
+            annotator=request.user,
+            deleted=False).order_by("pk")[0:1].get()
+
+    next_image_id = next_annotation.image.pk
+    return HttpResponse(
+        "<out><dir>f</dir><file>img{}.jpg</file></out>".format(next_image_id),
+        content_type="text/xml")
+
+# return the previous annotation based on the image given in the request
+def prev_annotation(request):
+    filename = request.GET["image"]
+    try:
+        if not filename.startswith("img") or not filename.endswith(".jpg"):
+            raise Exception("invalid filename {}".format(filename))
+        image_id = int(filename[3:-4])
+    except Exception as e:
+        raise SuspiciousOperation("bad query") from e
+    
+    # search for the previous annotation: one whose image has a smaller primary
+    # key than the given image. an arbitrary but consistent ordering.
+    try:
+        prev_annotation = models.Annotation.objects.filter(
+            image__pk__lt=image_id, annotator=request.user,
+            deleted=False).order_by("-pk")[0:1].get()
+    except models.Annotation.DoesNotExist:
+        # we must be at the start of the loop. get the last annotation instead
+        prev_annotation = models.Annotation.objects.filter(
+            annotator=request.user,
+            deleted=False).order_by("-pk")[0:1].get()
+
+    prev_image_id = prev_annotation.image.pk
+    return HttpResponse(
+        "<out><dir>f</dir><file>img{}.jpg</file></out>".format(prev_image_id),
+        content_type="text/xml")
