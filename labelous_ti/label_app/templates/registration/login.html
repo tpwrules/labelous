@@ -1,0 +1,43 @@
+<html>
+<head><title>Log in please</title></head>
+<body>
+
+<h2>Log In</h2>
+
+{% if form.errors %}
+<p>Your username and password didn't match. Please try again.</p>
+{% endif %}
+
+{% if next %}
+    {% if user.is_authenticated %}
+    <p>Your account doesn't have access to this page. To proceed,
+    please login with an account that has access.</p>
+    {% else %}
+    <p>Please log in to see this page.</p>
+    {% endif %}
+{% endif %}
+
+<form id="nf" method="post" action="{% url 'login' %}?next={{ next }}">
+{% csrf_token %}
+<table>
+<tr>
+    <td>{{ form.username.label_tag }}</td>
+    <td>{{ form.username }}</td>
+</tr>
+<tr>
+    <td>{{ form.password.label_tag }}</td>
+    <td>{{ form.password }}</td>
+</tr>
+</table>
+
+<input type="submit" value="Log In">
+<input id="nv" type="hidden" name="next" value="{{ next }}">
+</form>
+
+<script type="text/javascript">
+    var h = window.location.hash;
+    document.getElementById("nf").action += h;
+    document.getElementById("nv").value += h;
+</script>
+
+</body>
