@@ -458,3 +458,23 @@ def prev_annotation(request):
     return HttpResponse(
         "<out><dir>f</dir><file>img{}.jpg</file></out>".format(prev_image_id),
         content_type="text/xml")
+
+# show all the annotations the user has
+def annotation_list(request):
+    # this should be done with the templating engine but we are cowboys rn
+    out = ["<html><head><title>My Annotations</title></head><body>"
+        "<h1>My Annotations</h1>"]
+
+    the_annotations = models.Annotation.objects.order_by('pk').filter(
+        annotator=request.user, deleted=False)
+
+    for anno in the_annotations:
+        link = ("label/#collection=LabelMe&mode=f&folder=f"
+            "&image=img{}.jpg&username=hi&actions=a".format(anno.image.pk))
+        out.append("<a href='{}'>"
+            "<div style='display:inline-block; margin-top:10px; width:25%;'>"
+            "<img src='label/Images/f/img{}.jpg' style='width:100%;'>"
+            "</div></a><br>".format(link, anno.image.pk))
+    out.append("</body></html>")
+
+    return HttpResponse(out)
