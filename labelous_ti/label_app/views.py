@@ -4,6 +4,7 @@ from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import SuspiciousOperation
 from django.db import transaction
+from django.shortcuts import render
 
 from xml.sax.saxutils import escape as xml_escape
 import defusedxml.ElementTree
@@ -404,6 +405,12 @@ def post_annotation_xml(request):
     # of XML. what that is doesn't matter. eventually it will be quasi-related
     # to any error so the tool can take appropriate action.
     return HttpResponse("<nop/>", content_type="text/xml")
+
+# serve the actual tool page
+def tool(request):
+    # the content type must be xhtml or the SVGs will not render!
+    return render(request, "label_app/tool.html",
+        content_type="application/xhtml+xml")
 
 # return the next annotation based on the image given in the request
 def next_annotation(request):
