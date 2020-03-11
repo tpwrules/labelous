@@ -12,13 +12,14 @@
         <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Cabin:400" type="text/css" />
     </head>
     <body>
+        <script>0</script>{# fix flash of unstyled content #}
         <div class="header">
             <div id="logo">
                 <a href="/"><img src="{% static 'label_app/LabelMe_logo3.png' %}" width="216" height="69" alt="LabelMe logo"></a> 
             </div>
             <div id="topnav">
                 <ul id="topmenu">
-                    <li><a href="{% url 'annos_in_progress' %}">My Annotations</a></li>
+                    <li><a href="{% url 'annos_in_progress' %}"{% if request.resolver_match.url_name|slice:":6" == "annos_" %} class="active"{% endif %}>My Annotations</a></li>
                     <li>
                         <a>test dropdown</a>
                         <ul>
@@ -32,7 +33,7 @@
                             <li><a href="help">get help</a></li>
                         </ul>
                     </li>
-                    <li><a href="{% url 'credits_page' %}">Credits</a></li>
+                    <li><a href="{% url 'credits_page' %}"{% if request.resolver_match.url_name == "credits_page" %} class="active"{% endif %}>Credits</a></li>
                 </ul>
             </div>
         </div>

@@ -9,4 +9,8 @@ urlpatterns = [
     path('credits', views.credits_page, name="credits_page"),
     path('browse/in_progress/', login_required(views.annotation_list),
         name="annos_in_progress"),
+    path('browse/pending_review/', login_required(views.annotation_list),
+        name="annos_pending_review"),
+    path('browse/finished/', login_required(views.annotation_list),
+        name="annos_finished"),
 ]
