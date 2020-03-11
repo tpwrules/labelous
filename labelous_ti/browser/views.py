@@ -25,3 +25,6 @@ def annotation_list(request):
 
 def test(request):
     return render(request, "browser/base_labeling.html")
+
+def credits_page(request):
+    return render(request, "browser/credits.html")
