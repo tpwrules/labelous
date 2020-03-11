@@ -8,7 +8,7 @@ def annotation_list(request):
     annotations = label_app.models.Annotation.objects.order_by('pk').filter(
         annotator=request.user, deleted=False)
 
-    return render(request, "browser/labeling_imagelist.html", 
+    return render(request, "browser/browse.html", 
         {"annotations": annotations})
 
 def credits_page(request):

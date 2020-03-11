@@ -1,0 +1,22 @@
+{% extends "browser/base.html" %}
+{% block body %}
+<div id="left">
+    <ul class="menu">
+        <li><a href="q">one</a></li>
+        <li><a href="r">two</a></li>
+    </ul>
+</div>
+<div id="content">
+    <div id="topCenter">
+        <div id="pathway">My Stuff
+        <span class="sub_pathway"><br>something else</span>
+        </div>
+    </div>
+
+    <div id="albumcontainer">
+        {% for anno in annotations %}
+        <div class="album"><img src="/label/Images/f/img{{ anno.image.pk }}.jpg" style="padding:0px; height:64px;  width:85px;"><div style='margin-top:-68px;'><a href="/label/#collection=LabelMe&mode=f&folder=f&image=img{{ anno.image.pk }}&username=hi&actions=a" target="_blank"><img src="/label/Images/f/img{{ anno.image.pk }}.svg" width="85px" height="64px"></a></div><div class="image-title">blah<br>moreblah</div></div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
