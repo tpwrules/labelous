@@ -465,3 +465,56 @@ def prev_annotation(request):
     return HttpResponse(
         "<out><dir>f</dir><file>img{}.jpg</file></out>".format(prev_image_id),
         content_type="text/xml")
+
+# give an object's outline a color based on its name. taken from the JS so we
+# can give the same colors
+object_colors = \
+    ["#009900","#00ff00","#ccff00","#ffff00","#ffcc00","#ff9999","#cc0033",
+    "#ff33cc","#9933ff","#990099","#000099","#006699","#00ccff","#999900"]
+def calculate_object_color(name):
+    # might not give the same color for non-ascii chars but those aren't very
+    # likely and it doesn't matter much anyway
+    name_hash = sum(name.upper().encode("utf8"))
+    color_idx = (((name_hash + 567) * 1048797) % len(object_colors))
+    return object_colors[color_idx]
+
+# return a pretty SVG of the requested annotation
+def get_annotation_svg(request, image_id):
+    # regex only allows numbers through
+    image_id = int(image_id)
+
+    try:
+        image = image_mgr.models.Image.objects.get(pk=image_id)
+        exists = True
+    except image_mgr.models.Image.DoesNotExist:
+        exists = False
+        # we don't check for if multiple exist, because if that happens,
+        # something has gone horrifically wrong in the database.
+
+    if image.visible is False:
+        exists = False
+    else:
+        try:
+            annotation = models.Annotation.objects.get(
+                annotator=request.user, image=image, deleted=False)
+        except models.Annotation.DoesNotExist:
+            exists = False
+            # if multiple un-deleted annotations exist, something has gone
+            # terribly wrong.
+
+    if not exists:
+        raise Http404("Annotation does not exist.")
+
+    # there's no real advantage to templating the svg, so we build it manually
+    svg = \
+        ['<svg xmlns="http://www.w3.org/2000/svg" width="85px" height="64px">']
+    for polygon in annotation.polygons.filter(deleted=False).all():
+        svg.append('<polygon fill="none" points="')
+        points = polygon.points
+        for pi in range(0, len(points), 2):
+            svg.append('{:.2f},{:.2f} '.format(points[pi]/30, points[pi+1]/30))
+        svg.append('" style="stroke:{}; stroke-width:1;"/>'.format(
+            calculate_object_color(polygon.label_as_str)))
+    svg.append('</svg>')
+
+    return HttpResponse(svg, content_type="image/svg+xml")
