@@ -41,6 +41,7 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'image_mgr.apps.ImageMgrConfig',
     'label_app.apps.LabelAppConfig',
+    'browser.apps.BrowserConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
