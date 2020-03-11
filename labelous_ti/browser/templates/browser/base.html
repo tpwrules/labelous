@@ -1,0 +1,41 @@
+{% load compress %}
+{% load static %}
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title>LabelMe: The Open Annotation Tool</title>
+        {% compress css %}
+        <link rel="stylesheet" href="{% static 'label_app/gallery4.css' %}" type="text/css" />
+        <link rel="stylesheet" href="{% static 'label_app/accordion.css' %}" type="text/css" />
+        <link rel="stylesheet" href="{% static 'label_app/main4.css' %}" type="text/css" />
+        {% endcompress %}
+    </head>
+    <body>
+        <div class="header">
+            <div id="logo">
+                <a href="/"><img src="{% static 'label_app/LabelMe_logo3.png' %}" width="216" height="69" alt="LabelMe logo"></a> 
+            </div>
+            <div id="topnav">
+                <ul id="topmenu">
+                    <li><a href="blah">My LabelMe</a></li>
+                    <li>
+                        <a>test dropdown</a>
+                        <ul>
+                            <li><a href="a">a</a></li>
+                            <li><a href="b">b</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a>Help</a>
+                        <ul>
+                            <li><a href="help">get help</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="credits">Credits</a></li>
+                </ul>
+            </div>
+        </div>
+        {% block body %}
+        {% endblock %}
+    </body>
+</html>

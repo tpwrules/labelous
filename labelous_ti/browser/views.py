@@ -22,3 +22,6 @@ def annotation_list(request):
     out.append("</body></html>")
 
     return HttpResponse(out)
+
+def test(request):
+    return render(request, "browser/base_labeling.html")

@@ -29,8 +29,14 @@ for script in script_pattern.findall(tool):
     resources.add(script)
 for stylesheet in css_pattern.findall(tool):
     resources.add(stylesheet)
-# the favicon isn't matched by any of those patterns or the src we do below
-resources.add("Icons/favicon16.ico")
+resources.update([
+    # the favicon isn't matched by any of those patterns or the src we do below
+    "Icons/favicon16.ico",
+    # and we need the on-brand CSS for the browser component,
+    "browserTools/css/accordion.css",
+    "browserTools/css/gallery4.css",
+    "browserTools/css/main4.css",
+])
 
 # now we need to update the tool page with the new static links we're gonna make
 def to_static(path):
