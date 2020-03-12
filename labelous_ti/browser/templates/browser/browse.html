@@ -1,5 +1,24 @@
 {% extends "browser/base.html" %}
+{% block head %}
+<script type="text/javascript">
+function do_modify(action, anno_id) {
+    document.getElementById("modify_action").value = action;
+    document.getElementById("modify_anno_id").value = anno_id;
+    document.getElementById("modify_form").submit();
+}
+function do_delete(anno_id) {
+    if (confirm("This annotation will be gone forever! Delete?")) {
+        do_modify("delete_anno", anno_id);
+    }
+}
+</script>
+{% endblock %}
 {% block body %}
+<form id="modify_form" method="post" style="display:none;">
+    {% csrf_token %}
+    <input type="hidden" name="action" id="modify_action" value="nothing">
+    <input type="hidden" name="anno_id" id="modify_anno_id" value="none">
+</form>
 <div id="left">
     <ul class="menu">
         <li><a href="{% url 'annos_in_progress' %}"{% if request.resolver_match.url_name == "annos_in_progress" %} class="active"{% endif %}>In Progress</a></li>
@@ -9,7 +28,7 @@
 </div>
 <div id="content">
     <div id="topCenter">
-        <div id="pathway" style="width:100%;">
+        <div id="pathway" style="width:100%; height:100%; margin-bottom:20px;">
         {% if request.resolver_match.url_name == "annos_in_progress" %}
             Annotations In Progress
             <span class="sub_pathway"><br>Click on "Start a New Annotation" to begin annotating another inage, or click on an image below to continue editing.</span>
@@ -20,23 +39,30 @@
             Finished Annotations
             <span class="sub_pathway"><br>These annotations have been successfully reviewed and can no longer be edited. The displayed score is final.</span>
         {% endif %}
+    {% if messages %}
+    <ul style="color:#000;">
+        {% for message in messages %}
+        <li style="margin-bottom:0em;">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
         </div>
         <div id="collection_buttons">
             <a href="blah" style="display:inline;"><p class="labelBtn" style="height:21px; color: #eee; padding-top:5px">Start a New Annotation</p></a>
         </div>
     </div>
 
-    <div id="albumcontainer">
+    <div>
         {% for anno in annotations %}
         <div class="album"><img src="{{ anno.image.image_url }}" style="padding:0px; height:64px;  width:85px;"><div style='margin-top:-68px;'><a href="{{ anno.edit_url }}" target="_blank"><img src="{{ anno.svg_url }}" width="85px" height="64px"></a></div>
         <div class="image-title" style="max-width:82px;">
         {% if request.resolver_match.url_name == "annos_in_progress" %}
             Est. Score: ??<br>
-            <a href="blah">Delete</a><br>
+            <a href="javascript:do_delete({{ anno.pk }})">Delete</a><br>
             <a href="blah">Request Review</a>
         {% elif request.resolver_match.url_name == "annos_pending_review" %}
             Est. Score: ??<br>
-            <a href="blah">Delete</a><br>
+            <a href="javascript:do_delete({{ anno.pk }})">Delete</a><br>
             <a href="blah">Cancel Review</a>
         {% elif request.resolver_match.url_name == "annos_finished" %}
             Final Score: ??
