@@ -10,10 +10,13 @@ from datetime import datetime, timezone
 from image_mgr.models import Image
 from label_app.models import Annotation
 
-# show all the annotations the user has
-def annotation_list(request):
+def credits_page(request):
+    return render(request, "browser/credits.html")
+
+# show all the annotations the user has and let them annotate them
+def browse_view(request):
     if request.method == "POST":
-        return handle_modify(request)
+        return handle_browse_modify(request)
 
     view_mode = request.resolver_match.url_name
     if view_mode == "annos_in_progress":
@@ -32,9 +35,6 @@ def annotation_list(request):
     return render(request, "browser/browse.html", 
         {"annotations": annotations})
 
-def credits_page(request):
-    return render(request, "browser/credits.html")
-
 # thrown when something went wrong while modifying like the conditions weren't
 # met or the object doesn't exist
 class ModificationFailure(Exception):
@@ -43,7 +43,7 @@ class ModificationFailure(Exception):
 # handle the user doing something in the browser. the stuff comes via a hidden
 # form so we can confirm with the user in JS and then POST the action and be
 # sure the user did it via the CSRF token.
-def handle_modify(request):
+def handle_browse_modify(request):
     try:
         action = request.POST["action"]
         anno_id = request.POST["anno_id"]
@@ -122,3 +122,99 @@ def handle_modify(request):
             "An inconsistency was detected. Please retry the operation.")
 
     return redirect(destination)
+
+
+# let reviewers review others' annotations
+def review_annotations(request):
+    if request.method == "POST":
+        try:
+            action = request.POST["action"]
+            anno_id = int(request.POST["item_id"])
+            if action not in ("accept_anno", "reject_anno"):
+                raise Exception("invalid action {}".format(action))
+        except Exception as e:
+            raise SuspiciousOperation("bad post") from e
+
+        try:
+            with transaction.atomic():
+                # select for update so another process doesn't change the
+                # annotation while we're changing it and put us in a weird
+                # state
+                annotation = Annotation.objects.select_for_update().get(
+                    pk=anno_id, deleted=False, finished=False)
+
+                if action == "accept_anno":
+                    if not annotation.locked:
+                        raise ModificationFailure(
+                            "can't accept anno not under review")
+                    annotation.finished = True
+                    messages.add_message(request, messages.SUCCESS,
+                        "Annotation accepted as complete.")
+                elif action == "reject_anno":
+                    if not annotation.locked:
+                        raise ModificationFailure(
+                            "can't reject anno not under review")
+                    annotation.locked = False
+                    messages.add_message(request, messages.SUCCESS,
+                        "Annotation rejected and sent back to user.")
+
+                annotation.save()
+        except (Annotation.DoesNotExist, ModificationFailure):
+            # these might happen if the user tries to change something while the
+            # administrator is reviewing it. we don't need to rudely respond
+            # with a 400, we just kindly ask the administrator to try again now
+            # that the page is fresh.
+            messages.add_message(request, messages.ERROR,
+                "An inconsistency was detected. Please retry the operation.")
+
+        return redirect("anno_review")
+
+    annotations = Annotation.objects.order_by('pk').filter(
+        deleted=False, locked=True, finished=False)
+
+    return render(request, "browser/review.html", 
+        {"annotations": annotations})
+
+# and newly uploaded images
+def review_images(request):
+    if request.method == "POST":
+        try:
+            action = request.POST["action"]
+            image_id = int(request.POST["item_id"])
+            if action not in ("accept_image", "delete_image"):
+                raise Exception("invalid action {}".format(action))
+        except Exception as e:
+            raise SuspiciousOperation("bad post") from e
+
+        try:
+            with transaction.atomic():
+                # select for update so another process doesn't change the image
+                # while we're changing it and put us in a weird state
+                image = Image.objects.select_for_update().get(
+                    pk=image_id, available=False, visible=True)
+
+                if action == "accept_image":
+                    image.available = True
+                    messages.add_message(request, messages.SUCCESS,
+                        "Image now available for users to annotate.")
+                elif action == "delete_image":
+                    image.visible = False
+                    messages.add_message(request, messages.SUCCESS,
+                        "Image deleted.")
+
+                image.save()
+        except (Image.DoesNotExist, ModificationFailure):
+            # these might happen if the user tries to change something while the
+            # administrator is reviewing it. we don't need to rudely respond
+            # with a 400, we just kindly ask the administrator to try again now
+            # that the page is fresh.
+            messages.add_message(request, messages.ERROR,
+                "An inconsistency was detected. Please retry the operation.")
+
+        return redirect("image_review")
+
+    images = Image.objects.order_by('pk').filter(
+        available=False, visible=True)
+
+    return render(request, "browser/review.html", 
+        {"images": images})

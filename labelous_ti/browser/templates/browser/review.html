@@ -1,0 +1,85 @@
+{% extends "browser/base.html" %}
+{% block head %}
+<script type="text/javascript">
+function do_modify(action, item_id) {
+    document.getElementById("modify_action").value = action;
+    document.getElementById("modify_item_id").value = item_id;
+    document.getElementById("modify_form").submit();
+}
+function do_delete_image(image_id) {
+    if (confirm("This image will be gone forever! Delete?")) {
+        do_modify("delete_image", image_id);
+    }
+}
+function do_accept_image(image_id) {
+    if (confirm("This image will be made available for everyone to annotate. Continue?")) {
+        do_modify("accept_image", image_id);
+    }
+}
+function do_reject_anno(anno_id) {
+    if (confirm("This annotation will be returned for editing. Continue?")) {
+        do_modify("reject_anno", anno_id);
+    }
+}
+function do_accept_anno(anno_id) {
+    if (confirm("This annotation will be approved and no more editing will be possible. Continue?")) {
+        do_modify("accept_anno", anno_id);
+    }
+}
+</script>
+{% endblock %}
+{% block body %}
+<form id="modify_form" method="post" style="display:none;">
+    {% csrf_token %}
+    <input type="hidden" name="action" id="modify_action" value="nothing">
+    <input type="hidden" name="item_id" id="modify_item_id" value="none">
+</form>
+<div id="left">
+    <ul class="menu">
+        <li><a href="{% url 'anno_review' %}"{% if request.resolver_match.url_name == "anno_review" %} class="active"{% endif %}>Submitted Annotations</a></li>
+        <li><a href="{% url 'image_review' %}"{% if request.resolver_match.url_name == "image_review" %} class="active"{% endif %}>New Images</a></li>
+    </ul>
+</div>
+<div id="content">
+    <div id="topCenter">
+        <div id="pathway" style="width:100%; height:100%; margin-bottom:20px;">
+        {% if request.resolver_match.url_name == "anno_review" %}
+            Annotations Submitted for Review
+            <span class="sub_pathway"><br>Click on an annotation to view it, then accept or reject it. Click "Edit" to make changes.</span>
+        {% elif request.resolver_match.url_name == "image_review" %}
+            Images Awaiting Review 
+            <span class="sub_pathway"><br>Click on an image to view it, then accept or delete it.</span>
+        {% endif %}
+    {% if messages %}
+    <ul style="color:#000;">
+        {% for message in messages %}
+        <li style="margin-bottom:0em;">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+        </div>
+    </div>
+
+    <div>
+    {% if request.resolver_match.url_name == "anno_review" %}
+        {% for anno in annotations %}
+        <div class="album"><img src="{{ anno.image.image_url }}" style="padding:0px; height:64px;  width:85px;"><div style='margin-top:-68px;'><a href="{{ anno.view_url }}" target="_blank"><img src="{{ anno.svg_url }}" width="85px" height="64px"></a></div>
+        <div class="image-title" style="max-width:82px;">
+            Est. Score: ??<br>
+            <a href="javascript:do_accept_anno({{ anno.pk }})">Accept</a><br>
+            <a href="{{ anno.edit_url }}" target="_blank">Edit</a><br>
+            <a href="javascript:do_reject_anno({{ anno.pk }})">Reject</a>
+        </div></div>
+        {% endfor %}
+    {% elif request.resolver_match.url_name == "image_review" %}
+        {% for image in images %}
+        <div class="album"><a href="{{ image.image_url }}" target="_blank"><img src="{{ image.image_url }}" width="85px" height="64px"></a>
+        <div class="image-title" style="max-width:82px;">
+            <a href="javascript:do_accept_image({{ image.pk }})">Accept</a><br>
+            <a href="javascript:do_delete_image({{ image.pk }})">Delete</a>
+        </div></div>
+        {% endfor %}
+    {% endif %}
+    </div>
+</div>
+{% endblock %}

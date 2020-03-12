@@ -8,10 +8,16 @@ from django.contrib.auth.decorators import login_required
 urlpatterns = [
     path('', lambda request: render(request, "browser/home.html"), name="home"),
     path('credits', views.credits_page, name="credits_page"),
-    path('browse/in_progress/', login_required(views.annotation_list),
+
+    path('browse/in_progress/', login_required(views.browse_view),
         name="annos_in_progress"),
-    path('browse/pending_review/', login_required(views.annotation_list),
+    path('browse/pending_review/', login_required(views.browse_view),
         name="annos_pending_review"),
-    path('browse/finished/', login_required(views.annotation_list),
+    path('browse/finished/', login_required(views.browse_view),
         name="annos_finished"),
+
+    path('review/annotations/', login_required(views.review_annotations),
+        name="anno_review"),
+    path('review/images/', login_required(views.review_images),
+        name="image_review"),
 ]

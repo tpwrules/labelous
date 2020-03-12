@@ -21,7 +21,8 @@
             </div>
             <div id="topnav">
                 <ul id="topmenu">
-                    <li><a href="{% url 'annos_in_progress' %}"{% if request.resolver_match.url_name|slice:":6" == "annos_" %} class="active"{% endif %}>My Annotations</a></li>
+                    <li><a href="{% url 'annos_in_progress' %}"{% if request.resolver_match.url_name|slice:":6" == "annos_" %} class="active"{% endif %}>Annotate</a></li>
+                    <li><a href="{% url 'anno_review' %}"{% if request.resolver_match.url_name == "anno_review" %} class="active"{% endif %}{% if request.resolver_match.url_name == "image_review" %} class="active"{% endif %}>Review</a></li>
                     <li>
                         <a>test dropdown</a>
                         <ul>
