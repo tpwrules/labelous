@@ -95,8 +95,12 @@ from .filename_smuggler import *
 def get_annotation_xml(request, filename):
     try:
         nd = decode_filename(filename, anno_id=True)
-        annotation = Annotation.objects.get(pk=nd.anno_id,
-            annotator=request.user, deleted=False, image__visible=True)
+        if not request.user.is_staff:
+            annotation = Annotation.objects.get(pk=nd.anno_id,
+                annotator=request.user, deleted=False, image__visible=True)
+        else:
+            annotation = Annotation.objects.get(pk=nd.anno_id,
+                deleted=False, image__visible=True)
     except Exception as e:
         raise Http404("Annotation does not exist.") from e
 
@@ -195,9 +199,16 @@ def process_annotation_xml(request, root):
     try:
         nd = decode_filename(root.find("filename").text,
             image_id=True, anno_id=True)
-        annotation = Annotation.objects.get(pk=nd.anno_id,
-            annotator=request.user, image__pk=nd.image_id, image__visible=True,
-            locked=False, deleted=False)
+        if not request.user.is_staff:
+            annotation = Annotation.objects.get(pk=nd.anno_id,
+                annotator=request.user, image__pk=nd.image_id,
+                image__visible=True,
+                locked=False, deleted=False, finished=False)
+        else:
+            # staff can only access annotations under review
+            annotation = Annotation.objects.get(pk=nd.anno_id,
+                image__pk=nd.image_id, image__visible=True,
+                locked=True, deleted=False, finished=False)
     except Exception as e:
         raise SuspiciousOperation("invalid anno id") from e
 
@@ -290,6 +301,14 @@ def process_annotation_xml(request, root):
             raise SuspiciousOperation("invalid edit key")
         # the edit key can't be changed until the transaction finishes, ensuring
         # that any changes are in the database before a new edit can happen.
+
+        # we also need to make sure people aren't changing annotations they
+        # don't have access to. reviewers can only change locked annotations
+        # (those submitted for review) and users can only change unlocked
+        # annotations. nobody can change finished annotations.
+        should_be_locked = request.user.is_staff
+        if annotation.locked != should_be_locked or annotation.finished:
+            raise SuspiciousOperation("bad state")
 
         # mesaure if anything changed in the annotation so we can update its
         # last edited time.
@@ -450,11 +469,14 @@ def calculate_object_color(name):
 # return a pretty SVG of the requested annotation
 def get_annotation_svg(request, filename):
     # look the annotation up (while also verifying that the annotation is for
-    # the logged in user)
+    # the logged in user, if they're not privileged to view all annotations)
     try:
         nd = decode_filename(filename, anno_id=True)
-        annotation = Annotation.objects.get(pk=nd.anno_id,
-            annotator=request.user, deleted=False)
+        if not request.user.is_staff:
+            annotation = Annotation.objects.get(pk=nd.anno_id,
+                annotator=request.user, deleted=False)
+        else:
+            annotation = Annotation.objects.get(pk=nd.anno_id, deleted=False)
     except Exception as e:
         raise Http404("Annotation does not exist.") from e
 
