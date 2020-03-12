@@ -9,10 +9,10 @@ import re
 __all__ = ["encode_filename", "decode_filename", "NameData"]
 
 NameData = collections.namedtuple("NameData",
-    field_names=["image_id", "anno_id"],
-    defaults=[None, None])
+    field_names=["image_id", "anno_id", "view"],
+    defaults=[None, None, False])
 
-filename_re = re.compile(r'^i([0-9]+|x)_a([0-9]+|x)$')
+filename_re = re.compile(r'^i([0-9]+|x)_a([0-9]+|x)_v(0|1)$')
 
 def decode_filename(filename, image_id=False, anno_id=False):
     if filename[-4:] in (".jpg", ".svg", ".xml"):
@@ -38,12 +38,15 @@ def decode_filename(filename, image_id=False, anno_id=False):
     else:
         anno_id = int(match.group(2))
 
-    return NameData(image_id=image_id, anno_id=anno_id)
+    view = bool(int(match.group(3)))
+
+    return NameData(image_id=image_id, anno_id=anno_id, view=view)
 
 # inverse of the above
 def encode_filename(**kwargs):
     nd = NameData(**kwargs)
-    return "i{}_a{}".format(
+    return "i{}_a{}_v{}".format(
         "x" if nd.image_id is None else int(nd.image_id),
         "x" if nd.anno_id is None else int(nd.anno_id),
+        int(nd.view),
     )

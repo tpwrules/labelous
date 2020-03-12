@@ -36,6 +36,15 @@ class Annotation(models.Model):
             "&folder=f&image={}&username=hi&actions=a").format(
             encode_filename(image_id=self.image.pk, anno_id=self.pk))
 
+    # return the url that goes to the tool to just look at this annotation
+    @property
+    def view_url(self):
+        return reverse("label_app:label_tool")+("#collection=LabelMe&mode=f"
+            "&folder=f&image={}&username=hi&actions=v").format(
+            encode_filename(image_id=self.image.pk, anno_id=self.pk,
+                # ensures the edit key isn't changed
+                view=True))
+
     # return the url of the SVG image of this annotation
     @property
     def svg_url(self):

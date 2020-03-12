@@ -100,12 +100,13 @@ def get_annotation_xml(request, filename):
     except Exception as e:
         raise Http404("Annotation does not exist.") from e
 
-    # randomize the edit token. we don't use a transaction here because it's the
-    # annotation update code's responsibility to make sure it doesn't commit
-    # any data when the edit key is incorrect.
-    edit_key = secrets.token_bytes(16)
-    annotation.edit_key = edit_key
-    annotation.save()
+    # randomize the edit token, if we're editing. we don't use a transaction
+    # here because it's the annotation update code's responsibility to make sure
+    # it doesn't commit any data when the edit key is incorrect.
+    if not nd.view:
+        edit_key = secrets.token_bytes(16)
+        annotation.edit_key = edit_key
+        annotation.save()
 
     # find all the visible polygons attached to this annotation
     polygons = annotation.polygons.filter(deleted=False)
@@ -123,8 +124,11 @@ def get_annotation_xml(request, filename):
 
     # store the edit key as a hex string. this, basically, ensures that the user
     # doesn't get confused by having the same annotation open multiple times,
-    # and that the file's structure still matches the database.
-    xml.append("<edit_key>{}</edit_key>".format(edit_key.hex()))
+    # and that the file's structure still matches the database. if we're not
+    # editing, we don't send the edit key, guaranteeing that the tool can't send
+    # back any changes.
+    if not nd.view:
+        xml.append("<edit_key>{}</edit_key>".format(edit_key.hex()))
     # specify which image file to show for this annotation. since we look up
     # images by their ID, the folder doesn't matter as long as it's constant.
     # it's not clear if this is actually used though?

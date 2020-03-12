@@ -102,7 +102,7 @@ def handle_modify(request):
                 annotation.locked = True
                 messages.add_message(request, messages.SUCCESS,
                     "Annotation submitted for review.")
-                destination = "annos_pending_reivew"
+                destination = "annos_pending_review"
             elif action == "unreview":
                 if not annotation.locked:
                     raise ModificationFailure(
