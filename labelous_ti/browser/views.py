@@ -15,8 +15,19 @@ def annotation_list(request):
     if request.method == "POST":
         return handle_modify(request)
 
+    view_mode = request.resolver_match.url_name
+    if view_mode == "annos_in_progress":
+        locked = False
+        finished = False
+    elif view_mode == "annos_pending_review":
+        locked = True
+        finished = False
+    elif view_mode == "annos_finished":
+        locked = True
+        finished = True
+
     annotations = Annotation.objects.order_by('pk').filter(
-        annotator=request.user, deleted=False)
+        annotator=request.user, deleted=False, locked=locked, finished=finished)
 
     return render(request, "browser/browse.html", 
         {"annotations": annotations})
@@ -36,12 +47,12 @@ def handle_modify(request):
     try:
         action = request.POST["action"]
         anno_id = request.POST["anno_id"]
-        if action not in ("delete_anno", "new_anno",):
+        if action not in ("new", "delete", "review", "unreview"):
             raise Exception("invalid action {}".format(action))
     except Exception as e:
         raise SuspiciousOperation("bad post") from e
 
-    if action == "new_anno":
+    if action == "new":
         try:
             with transaction.atomic():
                 # get all the annotations the user is already working on or has
@@ -73,6 +84,7 @@ def handle_modify(request):
     except Exception as e:
         raise SuspiciousOperation("bad anno id") from e
 
+    destination = request.resolver_match.url_name
     try:
         with transaction.atomic():
             # select for update so another process doesn't change the annotation
@@ -80,10 +92,25 @@ def handle_modify(request):
             annotation = Annotation.objects.select_for_update().get(pk=anno_id,
                 annotator=request.user, deleted=False, finished=False)
 
-            if action == "delete_anno":
+            if action == "delete":
                 annotation.deleted = True
                 messages.add_message(request, messages.SUCCESS,
                     "Annotation deleted.")
+            elif action == "review":
+                if annotation.locked:
+                    raise ModificationFailure("can't review anno under review")
+                annotation.locked = True
+                messages.add_message(request, messages.SUCCESS,
+                    "Annotation submitted for review.")
+                destination = "annos_pending_reivew"
+            elif action == "unreview":
+                if not annotation.locked:
+                    raise ModificationFailure(
+                        "can't unreview anno not under review")
+                annotation.locked = False
+                messages.add_message(request, messages.SUCCESS,
+                    "Annotation review cancelled.")
+                destination = "annos_in_progress"
 
             annotation.save()
     except (Annotation.DoesNotExist, ModificationFailure):
@@ -91,7 +118,7 @@ def handle_modify(request):
         # tries to mess with it again in another. we don't need to rudely
         # respond with a 400, we just kindly ask the user to do it again now
         # that the page is fresh.
-        messages.add_message(request, message.ERROR,
+        messages.add_message(request, messages.ERROR,
             "An inconsistency was detected. Please retry the operation.")
 
-    return redirect(request.resolver_match.url_name)
+    return redirect(destination)

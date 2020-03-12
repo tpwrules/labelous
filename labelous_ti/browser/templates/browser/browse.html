@@ -8,11 +8,17 @@ function do_modify(action, anno_id) {
 }
 function do_delete(anno_id) {
     if (confirm("This annotation will be gone forever! Delete?")) {
-        do_modify("delete_anno", anno_id);
+        do_modify("delete", anno_id);
     }
 }
 function do_new() {
-    do_modify("new_anno", "none");
+    do_modify("new", "none");
+}
+function do_review(anno_id) {
+    do_modify("review", anno_id);
+}
+function do_unreview(anno_id) {
+    do_modify("unreview", anno_id);
 }
 </script>
 {% endblock %}
@@ -62,11 +68,11 @@ function do_new() {
         {% if request.resolver_match.url_name == "annos_in_progress" %}
             Est. Score: ??<br>
             <a href="javascript:do_delete({{ anno.pk }})">Delete</a><br>
-            <a href="blah">Request Review</a>
+            <a href="javascript:do_review({{ anno.pk }})">Request Review</a>
         {% elif request.resolver_match.url_name == "annos_pending_review" %}
             Est. Score: ??<br>
             <a href="javascript:do_delete({{ anno.pk }})">Delete</a><br>
-            <a href="blah">Cancel Review</a>
+            <a href="javascript:do_unreview({{ anno.pk }})">Cancel Review</a>
         {% elif request.resolver_match.url_name == "annos_finished" %}
             Final Score: ??
         {% endif %}</div></div>
