@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from django.urls import reverse
 
 from image_mgr.models import Image
-from .filename_smuggling import encode_filename
+from .filename_smuggler import *
 
 # an annotation: one set of polygons for a specific image by a specific person
 class Annotation(models.Model):

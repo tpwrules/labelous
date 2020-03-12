@@ -14,7 +14,7 @@ import secrets
 
 from .models import Annotation, Polygon
 from image_mgr.models import Image
-from .filename_smuggling import encode_filename, decode_filename
+from .filename_smuggler import *
 
 # THEORY OF OPERATION: COMMUNICATIONS
 
@@ -94,19 +94,11 @@ from .filename_smuggling import encode_filename, decode_filename
 
 def get_annotation_xml(request, filename):
     try:
-        _, anno_id = decode_filename(filename, anno_id=True)
+        nd = decode_filename(filename, anno_id=True)
+        annotation = Annotation.objects.get(pk=nd.anno_id,
+            annotator=request.user, deleted=False, image__visible=True)
     except Exception as e:
         raise Http404("Annotation does not exist.") from e
-
-    try:
-        annotation = Annotation.objects.get(pk=anno_id,
-            annotator=request.user, deleted=False, image__visible=True)
-        exists = True
-    except Annotation.DoesNotExist:
-        exists = False
-
-    if not exists:
-        raise Http404("Annotation does not exist.")
 
     # randomize the edit token. we don't use a transaction here because it's the
     # annotation update code's responsibility to make sure it doesn't commit
@@ -192,20 +184,15 @@ def process_annotation_xml(request, root):
     if root.tag != "annotation":
         raise SuspiciousOperation("not an annotation")
 
-    # figure out which annotation this document is allegedly for
+    # figure out which annotation this document is allegedly for then look that
+    # annotation up (while also verifying that the annotation is for the logged
+    # in user and that the image the labeler is looking at is the image that
+    # belongs to this annotation)
     try:
-        # remove file extension from filename because it doesn't actually matter
-        image_id, anno_id = decode_filename(root.find("filename").text[:-4],
+        nd = decode_filename(root.find("filename").text,
             image_id=True, anno_id=True)
-    except Exception as e:
-        raise SuspiciousOperation("invalid filename") from e
-
-    # look that annotation up (while also verifying that the annotation is for
-    # the logged in user and that the image the labeler is looking at is the
-    # image that belongs to this annotation)
-    try:
-        annotation = Annotation.objects.get(pk=anno_id,
-            annotator=request.user, image__pk=image_id, image__visible=True,
+        annotation = Annotation.objects.get(pk=nd.anno_id,
+            annotator=request.user, image__pk=nd.image_id, image__visible=True,
             locked=False, deleted=False)
     except Exception as e:
         raise SuspiciousOperation("invalid anno id") from e
@@ -399,7 +386,7 @@ def tool(request):
 # return the next annotation based on the filename given in the request
 def next_annotation(request):
     try:
-        _, anno_id = decode_filename(request.GET["image"][:-4], anno_id=True)
+        nd = decode_filename(request.GET["image"], anno_id=True)
     except Exception as e:
         raise SuspiciousOperation("invalid filename") from e
     
@@ -407,7 +394,7 @@ def next_annotation(request):
     # current one. an arbitrary but consistent ordering.
     try:
         next_annotation = Annotation.objects.filter(
-            pk__gt=anno_id, annotator=request.user,
+            pk__gt=nd.anno_id, annotator=request.user,
             deleted=False).order_by("pk")[0:1].get()
     except Annotation.DoesNotExist:
         # we must be at the end of the loop. get the first annotation instead
@@ -423,7 +410,7 @@ def next_annotation(request):
 # return the previous annotation based on the filename given in the request
 def prev_annotation(request):
     try:
-        _, anno_id = decode_filename(request.GET["image"][:-4], anno_id=True)
+        nd = decode_filename(request.GET["image"], anno_id=True)
     except Exception as e:
         raise SuspiciousOperation("invalid filename") from e
     
@@ -431,7 +418,7 @@ def prev_annotation(request):
     # than current one. an arbitrary but consistent ordering.
     try:
         prev_annotation = Annotation.objects.filter(
-            pk__lt=anno_id, annotator=request.user,
+            pk__lt=nd.anno_id, annotator=request.user,
             deleted=False).order_by("pk")[0:1].get()
     except Annotation.DoesNotExist:
         # we must be at the start of the loop. get the first annotation instead
@@ -458,15 +445,11 @@ def calculate_object_color(name):
 
 # return a pretty SVG of the requested annotation
 def get_annotation_svg(request, filename):
-    try:
-        _, anno_id = decode_filename(filename, anno_id=True)
-    except Exception as e:
-        raise Http404("Annotation does not exist.") from e
-    
     # look the annotation up (while also verifying that the annotation is for
     # the logged in user)
     try:
-        annotation = Annotation.objects.get(pk=anno_id,
+        nd = decode_filename(filename, anno_id=True)
+        annotation = Annotation.objects.get(pk=nd.anno_id,
             annotator=request.user, deleted=False)
     except Exception as e:
         raise Http404("Annotation does not exist.") from e

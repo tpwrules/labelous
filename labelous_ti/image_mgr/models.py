@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.urls import reverse
 
-from label_app.filename_smuggling import encode_filename
+from label_app.filename_smuggler import encode_filename
 
 # hold data about a particular image in the system
 class Image(models.Model):
