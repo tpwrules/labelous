@@ -11,6 +11,9 @@ function do_delete(anno_id) {
         do_modify("delete_anno", anno_id);
     }
 }
+function do_new() {
+    do_modify("new_anno", "none");
+}
 </script>
 {% endblock %}
 {% block body %}
@@ -48,7 +51,7 @@ function do_delete(anno_id) {
     {% endif %}
         </div>
         <div id="collection_buttons">
-            <a href="blah" style="display:inline;"><p class="labelBtn" style="height:21px; color: #eee; padding-top:5px">Start a New Annotation</p></a>
+            <a href="javascript:do_new();" style="display:inline;"><p class="labelBtn" style="height:21px; color: #eee; padding-top:5px">Start a New Annotation</p></a>
         </div>
     </div>
 
