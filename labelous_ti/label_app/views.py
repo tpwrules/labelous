@@ -12,9 +12,9 @@ import types
 from datetime import datetime, timezone
 import secrets
 
-from . import models
+from .models import Annotation, Polygon
+from image_mgr.models import Image
 from .filename_smuggling import encode_filename, decode_filename
-import image_mgr.models
 
 # THEORY OF OPERATION: COMMUNICATIONS
 
@@ -99,10 +99,10 @@ def get_annotation_xml(request, filename):
         raise Http404("Annotation does not exist.") from e
 
     try:
-        annotation = models.Annotation.objects.get(pk=anno_id,
+        annotation = Annotation.objects.get(pk=anno_id,
             annotator=request.user, deleted=False, image__visible=True)
         exists = True
-    except models.Annotation.DoesNotExist:
+    except Annotation.DoesNotExist:
         exists = False
 
     if not exists:
@@ -204,7 +204,7 @@ def process_annotation_xml(request, root):
     # the logged in user and that the image the labeler is looking at is the
     # image that belongs to this annotation)
     try:
-        annotation = models.Annotation.objects.get(pk=anno_id,
+        annotation = Annotation.objects.get(pk=anno_id,
             annotator=request.user, image__pk=image_id, image__visible=True,
             locked=False, deleted=False)
     except Exception as e:
@@ -292,7 +292,7 @@ def process_annotation_xml(request, root):
     with transaction.atomic():
         # reload the annotation, this time while selected for update. this
         # ensures that nobody else can change it until the transaction finishes.
-        annotation = models.Annotation.objects.select_for_update().get(
+        annotation = Annotation.objects.select_for_update().get(
             pk=annotation.pk)
         # now we can be sure the edit key is correct
         if edit_key != bytes(annotation.edit_key):
@@ -328,7 +328,7 @@ def process_annotation_xml(request, root):
                     if anno_poly.deleted:
                         continue
                     else:
-                        poly = models.Polygon(
+                        poly = Polygon(
                             annotation=annotation, anno_index=anno_poly.index)
                         polygon_changed = True
 
@@ -406,12 +406,12 @@ def next_annotation(request):
     # search for the next annotation: one that has a bigger primary key than
     # current one. an arbitrary but consistent ordering.
     try:
-        next_annotation = models.Annotation.objects.filter(
+        next_annotation = Annotation.objects.filter(
             pk__gt=anno_id, annotator=request.user,
             deleted=False).order_by("pk")[0:1].get()
-    except models.Annotation.DoesNotExist:
+    except Annotation.DoesNotExist:
         # we must be at the end of the loop. get the first annotation instead
-        next_annotation = models.Annotation.objects.filter(
+        next_annotation = Annotation.objects.filter(
             annotator=request.user,
             deleted=False).order_by("pk")[0:1].get()
 
@@ -430,12 +430,12 @@ def prev_annotation(request):
     # search for the previous annotation: one that has a smaller primary key
     # than current one. an arbitrary but consistent ordering.
     try:
-        prev_annotation = models.Annotation.objects.filter(
+        prev_annotation = Annotation.objects.filter(
             pk__lt=anno_id, annotator=request.user,
             deleted=False).order_by("pk")[0:1].get()
-    except models.Annotation.DoesNotExist:
+    except Annotation.DoesNotExist:
         # we must be at the start of the loop. get the first annotation instead
-        prev_annotation = models.Annotation.objects.filter(
+        prev_annotation = Annotation.objects.filter(
             annotator=request.user,
             deleted=False).order_by("-pk")[0:1].get()
 
@@ -466,7 +466,7 @@ def get_annotation_svg(request, filename):
     # look the annotation up (while also verifying that the annotation is for
     # the logged in user)
     try:
-        annotation = models.Annotation.objects.get(pk=anno_id,
+        annotation = Annotation.objects.get(pk=anno_id,
             annotator=request.user, deleted=False)
     except Exception as e:
         raise Http404("Annotation does not exist.") from e

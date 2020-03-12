@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 
 import shutil
 
-from . import models
+from .models import Image
 from label_app.filename_smuggling import decode_filename
 
 # serve images to the labeler
@@ -17,7 +17,7 @@ def image_file(request, filename):
         raise Http404("Image does not exist.") from e
 
     try:
-        image = models.Image.objects.get(pk=image_id, visible=True)
+        image = Image.objects.get(pk=image_id, visible=True)
     except Exception as e:
         raise Http404("Image does not exist.") from e
 
