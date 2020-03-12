@@ -1,5 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.urls import reverse
+
+from label_app.filename_smuggling import encode_filename
 
 # hold data about a particular image in the system
 class Image(models.Model):
@@ -20,3 +23,9 @@ class Image(models.Model):
     # priority: some metric of how important this image is. not sure what
     # it will be used for yet, if at all.
     priority = models.FloatField(default=1)
+
+    # return the url of this image
+    @property
+    def image_url(self):
+        return reverse("label_app:label_image", current_app="label_app",
+            args=(encode_filename(image_id=self.pk),))

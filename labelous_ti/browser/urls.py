@@ -4,6 +4,7 @@ from django.shortcuts import render
 from . import views
 from django.contrib.auth.decorators import login_required
 
+#app_name = "browser"
 urlpatterns = [
     path('', lambda request: render(request, "browser/home.html"), name="home"),
     path('credits', views.credits_page, name="credits_page"),

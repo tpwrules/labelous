@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 import secrets
 
 from . import models
+from .filename_smuggling import encode_filename, decode_filename
 import image_mgr.models
 
 # THEORY OF OPERATION: COMMUNICATIONS
@@ -91,28 +92,18 @@ import image_mgr.models
 # most recent annotation request.
 
 
-def get_annotation_xml(request, image_id):
-    # regex only allows numbers through
-    image_id = int(image_id)
+def get_annotation_xml(request, filename):
+    try:
+        _, anno_id = decode_filename(filename, anno_id=True)
+    except Exception as e:
+        raise Http404("Annotation does not exist.") from e
 
     try:
-        image = image_mgr.models.Image.objects.get(pk=image_id)
+        annotation = models.Annotation.objects.get(pk=anno_id,
+            annotator=request.user, deleted=False, image__visible=True)
         exists = True
-    except image_mgr.models.Image.DoesNotExist:
+    except models.Annotation.DoesNotExist:
         exists = False
-        # we don't check for if multiple exist, because if that happens,
-        # something has gone horrifically wrong in the database.
-
-    if image.visible is False:
-        exists = False
-    else:
-        try:
-            annotation = models.Annotation.objects.get(
-                annotator=request.user, image=image, deleted=False)
-        except models.Annotation.DoesNotExist:
-            exists = False
-            # if multiple un-deleted annotations exist, something has gone
-            # terribly wrong.
 
     if not exists:
         raise Http404("Annotation does not exist.")
@@ -138,18 +129,15 @@ def get_annotation_xml(request, image_id):
     # apply will be preserved. formatting is wasted bytes, so we don't put it
     # in.
 
-    # write which annotation ID this represents. we don't get anything other
-    # than the xml when this document is returned, so we need it to look back up
-    # where it came from.
-    xml.append("<c_anno_id>{}</c_anno_id>".format(annotation.pk))
     # store the edit key as a hex string. this, basically, ensures that the user
     # doesn't get confused by having the same annotation open multiple times,
     # and that the file's structure still matches the database.
     xml.append("<edit_key>{}</edit_key>".format(edit_key.hex()))
     # specify which image file to show for this annotation. since we look up
     # images by their ID, the folder doesn't matter as long as it's constant.
-    xml.append("<filename>img{}.jpg</filename><folder>f</folder>".format(
-        image_id))
+    # it's not clear if this is actually used though?
+    xml.append("<filename>{}.jpg</filename><folder>f</folder>".format(
+        encode_filename(image_id=annotation.image.pk, anno_id=annotation.pk)))
     for polygon in polygons:
         xml.append("<object>")
         # we need to know the polygon ID so we can update the record if the user
@@ -204,25 +192,21 @@ def process_annotation_xml(request, root):
     if root.tag != "annotation":
         raise SuspiciousOperation("not an annotation")
 
-    # look up the image we are allegedly annotating
+    # figure out which annotation this document is allegedly for
     try:
-        filename = root.find("filename").text
-        if not filename.startswith("img") or not filename.endswith(".jpg"):
-            raise Exception("invalid filename {}".format(filename))
-        image_id = int(filename[3:-4])
-        image = image_mgr.models.Image.objects.get(pk=image_id)
-        if not image.visible:
-            raise Exception("invisible image")
+        # remove file extension from filename because it doesn't actually matter
+        image_id, anno_id = decode_filename(root.find("filename").text[:-4],
+            image_id=True, anno_id=True)
     except Exception as e:
-        raise SuspiciousOperation("invalid image") from e
+        raise SuspiciousOperation("invalid filename") from e
 
-    # look up the annotation this document is allegedly for
+    # look that annotation up (while also verifying that the annotation is for
+    # the logged in user and that the image the labeler is looking at is the
+    # image that belongs to this annotation)
     try:
-        anno_id = int(root.find("c_anno_id").text)
-        annotation = models.Annotation.objects.get(
-            annotator=request.user, image=image, locked=False, deleted=False)
-        if annotation.deleted:
-            raise Exception("deleted annotation")
+        annotation = models.Annotation.objects.get(pk=anno_id,
+            annotator=request.user, image__pk=image_id, image__visible=True,
+            locked=False, deleted=False)
     except Exception as e:
         raise SuspiciousOperation("invalid anno id") from e
 
@@ -412,21 +396,18 @@ def tool(request):
     return render(request, "label_app/tool.html",
         content_type="application/xhtml+xml")
 
-# return the next annotation based on the image given in the request
+# return the next annotation based on the filename given in the request
 def next_annotation(request):
-    filename = request.GET["image"]
     try:
-        if not filename.startswith("img") or not filename.endswith(".jpg"):
-            raise Exception("invalid filename {}".format(filename))
-        image_id = int(filename[3:-4])
+        _, anno_id = decode_filename(request.GET["image"][:-4], anno_id=True)
     except Exception as e:
-        raise SuspiciousOperation("bad query") from e
+        raise SuspiciousOperation("invalid filename") from e
     
-    # search for the next annotation: one whose image has a bigger primary key
-    # than the given image. an arbitrary but consistent ordering.
+    # search for the next annotation: one that has a bigger primary key than
+    # current one. an arbitrary but consistent ordering.
     try:
         next_annotation = models.Annotation.objects.filter(
-            image__pk__gt=image_id, annotator=request.user,
+            pk__gt=anno_id, annotator=request.user,
             deleted=False).order_by("pk")[0:1].get()
     except models.Annotation.DoesNotExist:
         # we must be at the end of the loop. get the first annotation instead
@@ -434,36 +415,33 @@ def next_annotation(request):
             annotator=request.user,
             deleted=False).order_by("pk")[0:1].get()
 
-    next_image_id = next_annotation.image.pk
     return HttpResponse(
-        "<out><dir>f</dir><file>img{}.jpg</file></out>".format(next_image_id),
+        "<out><dir>f</dir><file>{}.jpg</file></out>".format(encode_filename(
+            image_id=next_annotation.image.pk, anno_id=next_annotation.pk)),
         content_type="text/xml")
 
-# return the previous annotation based on the image given in the request
+# return the previous annotation based on the filename given in the request
 def prev_annotation(request):
-    filename = request.GET["image"]
     try:
-        if not filename.startswith("img") or not filename.endswith(".jpg"):
-            raise Exception("invalid filename {}".format(filename))
-        image_id = int(filename[3:-4])
+        _, anno_id = decode_filename(request.GET["image"][:-4], anno_id=True)
     except Exception as e:
-        raise SuspiciousOperation("bad query") from e
+        raise SuspiciousOperation("invalid filename") from e
     
-    # search for the previous annotation: one whose image has a smaller primary
-    # key than the given image. an arbitrary but consistent ordering.
+    # search for the previous annotation: one that has a smaller primary key
+    # than current one. an arbitrary but consistent ordering.
     try:
         prev_annotation = models.Annotation.objects.filter(
-            image__pk__lt=image_id, annotator=request.user,
-            deleted=False).order_by("-pk")[0:1].get()
+            pk__lt=anno_id, annotator=request.user,
+            deleted=False).order_by("pk")[0:1].get()
     except models.Annotation.DoesNotExist:
-        # we must be at the start of the loop. get the last annotation instead
+        # we must be at the start of the loop. get the first annotation instead
         prev_annotation = models.Annotation.objects.filter(
             annotator=request.user,
             deleted=False).order_by("-pk")[0:1].get()
 
-    prev_image_id = prev_annotation.image.pk
     return HttpResponse(
-        "<out><dir>f</dir><file>img{}.jpg</file></out>".format(prev_image_id),
+        "<out><dir>f</dir><file>{}.jpg</file></out>".format(encode_filename(
+            image_id=prev_annotation.image.pk, anno_id=prev_annotation.pk)),
         content_type="text/xml")
 
 # give an object's outline a color based on its name. taken from the JS so we
@@ -479,31 +457,19 @@ def calculate_object_color(name):
     return object_colors[color_idx]
 
 # return a pretty SVG of the requested annotation
-def get_annotation_svg(request, image_id):
-    # regex only allows numbers through
-    image_id = int(image_id)
-
+def get_annotation_svg(request, filename):
     try:
-        image = image_mgr.models.Image.objects.get(pk=image_id)
-        exists = True
-    except image_mgr.models.Image.DoesNotExist:
-        exists = False
-        # we don't check for if multiple exist, because if that happens,
-        # something has gone horrifically wrong in the database.
-
-    if image.visible is False:
-        exists = False
-    else:
-        try:
-            annotation = models.Annotation.objects.get(
-                annotator=request.user, image=image, deleted=False)
-        except models.Annotation.DoesNotExist:
-            exists = False
-            # if multiple un-deleted annotations exist, something has gone
-            # terribly wrong.
-
-    if not exists:
-        raise Http404("Annotation does not exist.")
+        _, anno_id = decode_filename(filename, anno_id=True)
+    except Exception as e:
+        raise Http404("Annotation does not exist.") from e
+    
+    # look the annotation up (while also verifying that the annotation is for
+    # the logged in user)
+    try:
+        annotation = models.Annotation.objects.get(pk=anno_id,
+            annotator=request.user, deleted=False)
+    except Exception as e:
+        raise Http404("Annotation does not exist.") from e
 
     # there's no real advantage to templating the svg, so we build it manually
     svg = \

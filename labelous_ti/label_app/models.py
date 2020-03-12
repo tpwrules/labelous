@@ -2,8 +2,10 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
+from django.urls import reverse
 
 from image_mgr.models import Image
+from .filename_smuggling import encode_filename
 
 # an annotation: one set of polygons for a specific image by a specific person
 class Annotation(models.Model):
@@ -26,6 +28,19 @@ class Annotation(models.Model):
     edit_key = models.BinaryField(max_length=16)
     # when this annotation, or any of its polygons, was last changed.
     last_edit_time = models.DateTimeField()
+
+    # return the url that goes to the tool to edit this annotation
+    @property
+    def edit_url(self):
+        return reverse("label_app:label_tool")+("#collection=LabelMe&mode=f"
+            "&folder=f&image={}&username=hi&actions=a").format(
+            encode_filename(image_id=self.image.pk, anno_id=self.pk))
+
+    # return the url of the SVG image of this annotation
+    @property
+    def svg_url(self):
+        return reverse("label_app:anno_svg",
+            args=(encode_filename(anno_id=self.pk),))
 
 def validate_is_points(value):
     if len(value) % 2 != 0:
