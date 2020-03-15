@@ -4,6 +4,8 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from django.conf import settings
 
+import math
+
 from label_app.filename_smuggler import encode_filename
 
 # maximum size of thumbnail in each dimension. we want thumbnails to all be the
@@ -74,3 +76,26 @@ class Image(models.Model):
     @property
     def thumb_path(self):
         return settings.L_IMAGE_PATH/(self.file_path+"_thumb.jpg")
+
+    # tuple of image (width, height)
+    @property
+    def image_size(self):
+        return (self.image_x, self.image_y)
+
+    # tuple of thumbnail (width, height)
+    # since we use PIL to generate the thumbnails, we borrow PIL's math
+    @property
+    def thumb_size(self):
+        x, y = THUMBNAIL_SIZE
+
+        def round_aspect(number, key):
+            return max(min(math.floor(number), math.ceil(number), key=key), 1)
+
+        # preserve aspect ratio
+        aspect = self.image_x / self.image_y
+        if x / y >= aspect:
+            x = round_aspect(y * aspect, key=lambda n: abs(aspect - n / y))
+        else:
+            y = round_aspect(x / aspect, key=lambda n: abs(aspect - x / n))
+
+        return (x, y)

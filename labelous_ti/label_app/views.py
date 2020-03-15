@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 import secrets
 
 from .models import Annotation, Polygon
-from image_mgr.models import Image
+from image_mgr.models import Image, THUMBNAIL_SIZE
 from .filename_smuggler import *
 
 # THEORY OF OPERATION: COMMUNICATIONS
@@ -503,14 +503,23 @@ def get_annotation_svg(request, filename):
         raise Http404("Annotation does not exist.") from e
 
     # there's no real advantage to templating the svg, so we build it manually
-    svg = \
-        ['<svg xmlns="http://www.w3.org/2000/svg" width="85px" height="64px">']
+    svg = ['<svg xmlns="http://www.w3.org/2000/svg" ']
+    # we need to make the SVG the same size as the thumbnail, and scale the
+    # polygon coordinates appropriately
+    image = annotation.image
+    image_size = image.image_size
+    thumb_size = image.thumb_size
+    svg.append('width="{}px" height="{}px">'.format(*thumb_size))
+    x_scale = thumb_size[0]/image_size[0]
+    y_scale = thumb_size[1]/image_size[1]
+    scale = min(x_scale, y_scale)
     for polygon in annotation.polygons.filter(deleted=False).all():
         svg.append('<polygon fill="none" points="')
         points = polygon.points
         for pi in range(0, len(points), 2):
-            svg.append('{:.2f},{:.2f} '.format(points[pi]/30, points[pi+1]/30))
-        svg.append('" style="stroke:{}; stroke-width:1;"/>'.format(
+            svg.append('{:.2f},{:.2f} '.format(
+                points[pi]*scale, points[pi+1]*scale))
+        svg.append('" style="stroke:{}; stroke-width:2;"/>'.format(
             calculate_object_color(polygon.label_as_str)))
     svg.append('</svg>')
 
