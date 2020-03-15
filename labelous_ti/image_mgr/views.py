@@ -19,7 +19,7 @@ def image_file(request, filename):
         raise Http404("Image does not exist.") from e
 
     # still clubbing baby seals
-    f = open(settings.L_IMAGE_PATH/image.file_path, "rb")
+    f = open(image.image_path, "rb")
     resp = HttpResponse(content_type="image/jpeg")
     shutil.copyfileobj(f, resp)
     f.close()

@@ -31,7 +31,8 @@ def browse_view(request):
         finished = True
 
     annotations = Annotation.objects.order_by('pk').filter(
-        annotator=request.user, deleted=False, locked=locked, finished=finished)
+        annotator=request.user, deleted=False, locked=locked, finished=finished,
+        image__deleted=False)
 
     return render(request, "browser/browse.html", 
         {"annotations": annotations})
@@ -66,7 +67,8 @@ def handle_browse_modify(request):
                 # that process can choose another image.
                 new_image = Image.objects.select_for_update(
                     skip_locked=True).filter(~Exists(existing_annos.filter(
-                        image__pk=OuterRef("pk"))))[0:1].get()
+                        image__pk=OuterRef("pk")))).filter(
+                            available=True, deleted=False)[0:1].get()
                 # now we can create an annotation for it
                 new_anno = Annotation(
                     annotator=request.user, image=new_image,
@@ -172,7 +174,7 @@ def review_annotations(request):
         return redirect("anno_review")
 
     annotations = Annotation.objects.order_by('pk').filter(
-        deleted=False, locked=True, finished=False)
+        deleted=False, locked=True, finished=False, image__deleted=False)
 
     return render(request, "browser/review.html", 
         {"annotations": annotations})
@@ -217,7 +219,7 @@ def review_images(request):
         return redirect("image_review")
 
     images = Image.objects.order_by('pk').filter(
-        available=False, visible=True)
+        available=False, deleted=False)
 
     return render(request, "browser/review.html", 
         {"images": images})

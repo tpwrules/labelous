@@ -1,16 +1,18 @@
 # this file handles the whole image processing deal, from image data to disk
 # storage, thumbnail generation, and database update.
 
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.conf import settings
 
-from .models import Image
-
-import PIL
-import piexif
 import hashlib
 import subprocess
 import re
+import io
+
+import PIL.Image
+import piexif
+
+from .models import Image, THUMBNAIL_SIZE
 
 # maximum size of JPEG, before processing, that we bother with
 MAX_IMAGE_SIZE = 10*1024*1024 # 10MiB
@@ -201,8 +203,7 @@ def process_image(uploader, name, orig_data):
         raise ProcessingFailure("missing JPEG SOI")
 
     # compute the SHA-256 of the image data so we can deduplicate images
-    import secrets
-    image_hash = secrets.token_bytes(32)#hashlib.sha256(orig_data).digest()
+    image_hash = hashlib.sha256(orig_data).digest()
     
     # make a hidden image record with the given hash. we expect images to be
     # unique, so we try and create it first.
@@ -226,6 +227,16 @@ def process_image(uploader, name, orig_data):
     # discussed earlier. jpegtran also losslessly applies the EXIF orientation.
     rebuilt_data = jpegtran(orig_data, orientation)
 
+    # from that data, we can more safely use Pillow to create a thumbnail
+    thumb = PIL.Image.open(io.BytesIO(rebuilt_data))
+    # we need to store the original image dimensions in the database
+    image_size = thumb.size
+    thumb.thumbnail(THUMBNAIL_SIZE)
+    thumb_file = io.BytesIO()
+    thumb.save(thumb_file, format="JPEG")
+    thumb_data = bytes(thumb_file.getbuffer())
+    thumb_file.close()
+
     # calculate an appropriate filename. we take all the nice characters from
     # the original, but not so many that we don't have room for the rest of the
     # filename.
@@ -233,15 +244,43 @@ def process_image(uploader, name, orig_data):
         name = "_"+name
     name = re.sub(r'[^0-9a-zA-z_\-.]', '_', name)[:128]
 
-    # add on the hash and an appropriate extension
-    name = "{}_{}.jpg".format(name, image_hash.hex())
+    # add on the hash (extension is added as necessary)
+    name = "{}_{}".format(name, image_hash.hex())
     # we are certain this filename won't collide with any other because it
     # includes the hash and we already made sure there are no other images with
     # the same hash
 
-    # finally, we can save the file to disk
-    f = open(settings.L_IMAGE_PATH/name, "wb")
-    f.write(rebuilt_data)
-    f.close()
+    # finally, we can save the file to disk and update the database record
+    image_path = settings.L_IMAGE_PATH/(name+".jpg")
+    thumb_path = settings.L_IMAGE_PATH/(name+"_thumb.jpg")
+    succeeded = False
+    try:
+        with transaction.atomic():
+            image.file_path = name # without extension
+            image.deleted = False
+            image.uploaded = True
+            image.image_x = image_size[0]
+            image.image_y = image_size[1]
+            image.save()
+
+            f = open(image_path, "wb")
+            f.write(rebuilt_data)
+            f.close()
+
+            f = open(thumb_path, "wb")
+            f.write(thumb_data)
+            f.close()
+        succeeded = True
+    finally:
+        if not succeeded:
+            # try to not leave useless files lingering
+            try:
+                image_path.unlink()
+            except:
+                pass
+            try:
+                thumb_path.unlink()
+            except:
+                pass
 
     return True

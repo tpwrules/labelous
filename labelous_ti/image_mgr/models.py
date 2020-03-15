@@ -2,8 +2,12 @@ from django.db import models
 from django.db.models import Q
 from django.contrib.auth.models import User
 from django.urls import reverse
+from django.conf import settings
 
 from label_app.filename_smuggler import encode_filename
+
+# maximum size of thumbnail in each dimension
+THUMBNAIL_SIZE = (256, 256)
 
 # hold data about a particular image in the system
 class Image(models.Model):
@@ -52,3 +56,8 @@ class Image(models.Model):
     def image_url(self):
         return reverse("label_app:label_image", current_app="label_app",
             args=(encode_filename(image_id=self.pk),))
+
+    # path to the image file on disk
+    @property
+    def image_path(self):
+        return settings.L_IMAGE_PATH/(self.file_path+".jpg")
