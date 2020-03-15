@@ -194,14 +194,14 @@ def review_images(request):
                 # select for update so another process doesn't change the image
                 # while we're changing it and put us in a weird state
                 image = Image.objects.select_for_update().get(
-                    pk=image_id, available=False, visible=True)
+                    pk=image_id, available=False, deleted=False)
 
                 if action == "accept_image":
                     image.available = True
                     messages.add_message(request, messages.SUCCESS,
                         "Image now available for users to annotate.")
                 elif action == "delete_image":
-                    image.visible = False
+                    image.deleted = True
                     messages.add_message(request, messages.SUCCESS,
                         "Image deleted.")
 

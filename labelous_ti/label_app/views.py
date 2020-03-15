@@ -136,7 +136,7 @@ def get_annotation_xml(request, filename):
     try:
         nd = decode_filename(filename, anno_id=True)
         annotation = Annotation.objects.get(pk=nd.anno_id,
-            deleted=False, image__visible=True)
+            deleted=False, image__deleted=False)
         require_anno_perms(request.user, annotation,
             "view" if nd.view else "edit")
     except Exception as e:
@@ -237,7 +237,7 @@ def process_annotation_xml(request, root):
         nd = decode_filename(root.find("filename").text,
             image_id=True, anno_id=True)
         annotation = Annotation.objects.get(pk=nd.anno_id, deleted=False,
-            image__pk=nd.image_id, image__visible=True)
+            image__pk=nd.image_id, image__deleted=False)
         require_anno_perms(request.user, annotation, "edit")
     except Exception as e:
         raise SuspiciousOperation("invalid anno id") from e
@@ -497,7 +497,7 @@ def get_annotation_svg(request, filename):
     try:
         nd = decode_filename(filename, anno_id=True)
         annotation = Annotation.objects.get(pk=nd.anno_id,
-            deleted=False, image__visible=True)
+            deleted=False, image__deleted=False)
         require_anno_perms(request.user, annotation, "view")
     except Exception as e:
         raise Http404("Annotation does not exist.") from e

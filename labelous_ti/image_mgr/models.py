@@ -8,13 +8,13 @@ from label_app.filename_smuggler import encode_filename
 class Image(models.Model):
     # where the image is on the filesystem, relative to the image storage dir
     file_path = models.CharField(max_length=255)
-    # available: true if image is available for annotation. if false, users
-    # can see their own annotations (if any) but can't start annotating this
-    # image.
+    # available: true if image is available for annotation. if false, users can
+    # see the image, and their own annotations (if any), but can't start
+    # annotating this image.
     available = models.BooleanField(default=False)
-    # visible: true if the image can be seen by users. if false, users can't
-    # see the image even if they have annotations for it.
-    visible = models.BooleanField(default=False)
+    # deleted: if the image still exists. if it's deleted, users can't see it
+    # even if they have annotations for it.
+    deleted = models.BooleanField(default=False)
     # uploader: user who uploaded this image
     uploader = models.ForeignKey(User, on_delete=models.CASCADE)
     # upload_time: time when this image was uploaded. automatically set when
