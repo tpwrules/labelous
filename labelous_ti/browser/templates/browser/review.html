@@ -63,7 +63,7 @@ function do_accept_anno(anno_id) {
     <div>
     {% if request.resolver_match.url_name == "anno_review" %}
         {% for anno in annotations %}
-        <div class="album"><img src="{{ anno.image.image_url }}" style="padding:0px; height:64px;  width:85px;"><div style='margin-top:-68px;'><a href="{{ anno.view_url }}" target="_blank"><img src="{{ anno.svg_url }}" width="85px" height="64px"></a></div>
+        <div class="album"><img src="{{ anno.image.image_thumb_url }}" style="padding:0px; height:64px;  width:85px;"><div style='margin-top:-68px;'><a href="{{ anno.view_url }}" target="_blank"><img src="{{ anno.svg_url }}" width="85px" height="64px"></a></div>
         <div class="image-title" style="max-width:82px;">
             Est. Score: ??<br>
             <a href="javascript:do_accept_anno({{ anno.pk }})">Accept</a><br>
@@ -73,7 +73,7 @@ function do_accept_anno(anno_id) {
         {% endfor %}
     {% elif request.resolver_match.url_name == "image_review" %}
         {% for image in images %}
-        <div class="album"><a href="{{ image.image_url }}" target="_blank"><img src="{{ image.image_url }}" width="85px" height="64px"></a>
+        <div class="album"><a href="{{ image.image_thumb_url }}" target="_blank"><img src="{{ image.image_url }}" width="85px" height="64px"></a>
         <div class="image-title" style="max-width:82px;">
             <a href="javascript:do_accept_image({{ image.pk }})">Accept</a><br>
             <a href="javascript:do_delete_image({{ image.pk }})">Delete</a>

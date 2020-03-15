@@ -57,7 +57,18 @@ class Image(models.Model):
         return reverse("label_app:label_image", current_app="label_app",
             args=(encode_filename(image_id=self.pk),))
 
+    # return the url of this image's thumbnail
+    @property
+    def image_thumb_url(self):
+        return reverse("label_app:label_image_thumb", current_app="label_app",
+            args=(encode_filename(image_id=self.pk),))
+
     # path to the image file on disk
     @property
     def image_path(self):
         return settings.L_IMAGE_PATH/(self.file_path+".jpg")
+
+    # path to the image thumbnail file on disk
+    @property
+    def thumb_path(self):
+        return settings.L_IMAGE_PATH/(self.file_path+"_thumb.jpg")

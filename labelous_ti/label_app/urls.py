@@ -10,6 +10,8 @@ urlpatterns = [
         login_required(views.tool), name="label_tool"),
     path('Images/f/<str:filename>.jpg',
         image_mgr.views.image_file, name="label_image"),
+    path('Images/t/<str:filename>.jpg',
+        image_mgr.views.image_thumb_file, name="label_image_thumb"),
     path('Annotations/f/<str:filename>.svg',
         login_required(views.get_annotation_svg), name="anno_svg"),
     path('Annotations/f/<str:filename>.xml',
