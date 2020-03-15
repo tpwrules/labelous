@@ -1,0 +1,18 @@
+{% extends "browser/base.html" %}
+{% block body %}
+<div id="maincontent">
+    <h1 class="title">Upload</h1>
+    {% if messages %}
+    <ul style="color:#000;">
+        {% for message in messages %}
+        <li style="margin-bottom:0em;">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="the_image">
+        <input type="submit" value="Submit">
+    </form>
+</div>
+{% endblock %}

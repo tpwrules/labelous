@@ -18,7 +18,10 @@ from django.urls import include, path
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_required
 
+import image_mgr.upload_views
+
 urlpatterns = [
+    path('upload/', image_mgr.upload_views.upload_image, name="upload_image"),
     path('admin/', admin.site.urls),
     path('label/', include('label_app.urls', namespace="label_app")),
     path('accounts/login/', auth_views.LoginView.as_view(), name="login"),
