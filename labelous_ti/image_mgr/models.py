@@ -6,8 +6,10 @@ from django.conf import settings
 
 from label_app.filename_smuggler import encode_filename
 
-# maximum size of thumbnail in each dimension
-THUMBNAIL_SIZE = (256, 256)
+# maximum size of thumbnail in each dimension. we want thumbnails to all be the
+# same height, so we allow a 3:1 aspect ratio. images that wide probably won't
+# ever be uploaded (but it's okay if they are)
+THUMBNAIL_SIZE = (576, 192)
 
 # hold data about a particular image in the system
 class Image(models.Model):

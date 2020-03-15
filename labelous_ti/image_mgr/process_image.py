@@ -189,6 +189,24 @@ def jpegtran(in_data, orientation):
     return out_data
 
 
+# use PIL to make a thumbnail according to the various settings. must not be
+# passed evil image data! returns (orig_size, thumb_data, thumb_size)
+def make_thumbnail(image_data):
+    image_file = io.BytesIO(image_data)
+    thumb_file = io.BytesIO()
+
+    thumb = PIL.Image.open(image_file)
+    orig_size = thumb.size
+    thumb.thumbnail(THUMBNAIL_SIZE)
+    thumb.save(thumb_file, format="JPEG", quality=75)
+
+    thumb_data = bytes(thumb_file.getbuffer())
+    image_file.close()
+    thumb_file.close()
+
+    return (orig_size, thumb_data, thumb.size)
+
+
 # returns True if an image is new, False if it's already in the database
 # (ignoring whether or not it was ever processed), or raises an exception if it
 # could not be processed
@@ -228,14 +246,7 @@ def process_image(uploader, name, orig_data):
     rebuilt_data = jpegtran(orig_data, orientation)
 
     # from that data, we can more safely use Pillow to create a thumbnail
-    thumb = PIL.Image.open(io.BytesIO(rebuilt_data))
-    # we need to store the original image dimensions in the database
-    image_size = thumb.size
-    thumb.thumbnail(THUMBNAIL_SIZE)
-    thumb_file = io.BytesIO()
-    thumb.save(thumb_file, format="JPEG")
-    thumb_data = bytes(thumb_file.getbuffer())
-    thumb_file.close()
+    image_size, thumb_data, thumb_size = make_thumbnail(rebuilt_data)
 
     # calculate an appropriate filename. we take all the nice characters from
     # the original, but not so many that we don't have room for the rest of the
