@@ -151,3 +151,6 @@ COMPRESS_OFFLINE = True
 import pathlib
 L_IMAGE_PATH = pathlib.Path(
     "/Users/thomaswatson/projects/labelous/test_images").resolve(strict=True)
+# path to the mozjpeg jpegtran tool
+L_JPEGTRAN_PATH = pathlib.Path("/Users/thomaswatson/projects/"
+    "labelous/mozjpeg/build/jpegtran").resolve(strict=True)

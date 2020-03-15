@@ -14,9 +14,7 @@ import io
 
 from .models import Image
 from label_app.filename_smuggler import *
-
-# todo: move
-MAX_IMAGE_SIZE = 10*1024*1024 # 10MiB
+from .process_image import process_image, ProcessingFailure, MAX_IMAGE_SIZE
 
 # this custom upload handler stores the upload to memory, and then stops
 # processing it if it's too big. amazingly, it doesn't actually seem possible to
@@ -99,20 +97,28 @@ def upload_image_post(request):
         messages.add_message(request, messages.ERROR,
             "The image format is not JPEG. Please mind the upload guidelines.")
         return
-    # note that it may still not be a jpeg even though the content type claims
-    # so! we deal with that fact later.
+    # it may still not be a jpeg even though the content type claims so!
 
-    the_image = the_image.read() # read all the image data
-    # verify that it starts like a JPEG
-    if len(the_image) < 2 or the_image[:2] != b"\xff\xd8":
+    # but we let the processor handle that possibility. it returns whether or
+    # not the image was new, or raises an exception if something went wrong.
+    try:
+        was_new = process_image(uploader=request.user,
+            name=the_image.name, orig_data=the_image.read())
+    except ProcessingFailure as e:
+        print(str(e))
         messages.add_message(request, messages.ERROR,
             "The image appears corrupt. Please try a different image.")
         return
-    # it still could be lying and be some type of evil file!
+
+    if was_new:
+        messages.add_message(request, messages.SUCCESS,
+            "Thank you for your submission. The image will be reviewed"
+            " by a moderator before it is available for annotation.")
+    else:
+        messages.add_message(request, messages.SUCCESS,
+            "Thank you for your submission. Unfortunately, this image has"
+            " already been submitted. Please try a different image.")
 
     # now that the processing is complete, the view will redirect the user back
     # to the upload page. if we just send the upload page again, then a refresh
     # would re-POST the data.
-    messages.add_message(request, messages.SUCCESS,
-        "Thank you for your submission. The image will be reviewed"
-        " by a moderator before it is available for annotation.")
