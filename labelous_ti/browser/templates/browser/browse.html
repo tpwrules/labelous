@@ -64,7 +64,7 @@ function do_unreview(anno_id) {
 
     <div style="display: inline-flex; flex-wrap:wrap;">
         {% for anno in annotations %}
-        <div class="album"><div style="padding:0px; height:192px; min-width:128px;"><img src="{{ anno.image.image_thumb_url }}" style="max-height:192px"><div style='margin-top:-{{  anno.image.thumb_size.1|add:"4" }}px;'><a href="{% if request.resolver_match.url_name == 'annos_in_progress' %}{{ anno.edit_url }}{% else %}{{ anno.view_url }}{% endif %}" target="_blank"><img src="{{ anno.svg_url }}"></a></div></div>
+        <div class="album"><div style="padding:0px; height:192px; min-width:128px;"><img src="{{ anno.image.image_thumb_url }}" style="max-height:192px"><div style='margin-top:-{{  anno.image.thumb_size.1|add:"4" }}px;'><a href="{% if request.resolver_match.url_name == 'annos_in_progress' %}{{ anno.edit_url }}{% else %}{{ anno.view_url }}{% endif %}"><img src="{{ anno.svg_url }}"></a></div></div>
         <div class="image-title" style="max-width:120px; font-size:14px;">
         {% if request.resolver_match.url_name == "annos_in_progress" %}
             Current Score: {{ anno.score|floatformat }}<br>
