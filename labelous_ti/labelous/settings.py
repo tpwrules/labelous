@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 """
 
 import os
+from .local_settings import *
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -29,12 +30,6 @@ except ImportError:
     key_f.write("SECRET_KEY = '{}'\n".format(key))
     key_f.close()
     from .secret_key import SECRET_KEY
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
-
 
 # Application definition
 
@@ -82,18 +77,6 @@ TEMPLATES = [
 WSGI_APPLICATION = 'labelous.wsgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/3.0/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'labelous',
-        'USER': 'labelous_login',
-        'PASSWORD': 'hello',
-        'HOST': 'localhost',
-    }
-}
 
 
 # Password validation
@@ -139,7 +122,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = '/Users/thomaswatson/projects/labelous/test_static'
 
 STATICFILES_FINDERS = [
     'django.contrib.staticfiles.finders.FileSystemFinder',
@@ -150,13 +132,3 @@ STATICFILES_FINDERS = [
 # static file compression settings
 COMPRESS_ENABLED = True # regardless of DEBUG
 COMPRESS_OFFLINE = True
-
-# internal settings
-
-# where the images are stored
-import pathlib
-L_IMAGE_PATH = pathlib.Path(
-    "/Users/thomaswatson/projects/labelous/test_images").resolve(strict=True)
-# path to the mozjpeg jpegtran tool
-L_JPEGTRAN_PATH = pathlib.Path("/Users/thomaswatson/projects/"
-    "labelous/mozjpeg/build/jpegtran").resolve(strict=True)
