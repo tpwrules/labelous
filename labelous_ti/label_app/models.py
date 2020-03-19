@@ -26,6 +26,10 @@ class Annotation(models.Model):
     creation_time = models.DateTimeField(auto_now_add=True)
     # annotation updates are only accepted if they have this key
     edit_key = models.BinaryField(max_length=16)
+    # latest version of the annotations. reset to 0 when the edit key is reset
+    # and incremented each time the tool sends a new xml. ensures annotations
+    # don't go backwards if xmls are received out of order.
+    edit_version = models.IntegerField(default=0)
     # when this annotation, or any of its polygons, was last changed.
     last_edit_time = models.DateTimeField()
     # total score of all the objects in the annotation. calculated when the xml

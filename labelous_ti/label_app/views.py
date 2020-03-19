@@ -26,16 +26,16 @@ script_dir = pathlib.Path(__file__).resolve(strict=True).parent
 # get_annotation_xml) that contains the current annotations for a particular
 # image. When the user changes something, the tool POSTs the document back
 # (handled by post_annotation_xml), and we have to update the database
-# correspondingly.
+# correspondingly. The document has a version number, ensuring we only update
+# the database if the document has newer annotations.
 
 # This arrangement is nice because we are assured that any particular response
 # has the full and accurate state of the labels. There is no problem if a
-# response gets dropped, the requests arrive in different orders, etc. The tool
-# also never has to wait for a server response during editing, thus ensuring the
-# tool remains responsive. Once the user closes the tool (and assuming the last
-# response received was the last response that the tool sent before the close;
-# the probable case), the database will accurately reflect all of the user's
-# edits.
+# response gets dropped, the requests arrive out of order, etc. The tool also
+# never has to wait for a server response during editing, thus ensuring the tool
+# remains responsive. Once the user closes the tool (and assuming the last
+# document sent made it to the server), the database will accurately reflect all
+# of the user's edits.
 
 # THEORY OF OPERATION: EDIT KEYS
 
@@ -146,12 +146,14 @@ def get_annotation_xml(request, filename):
     except Exception as e:
         raise Http404("Annotation does not exist.") from e
 
-    # randomize the edit token, if we're editing. we don't use a transaction
-    # here because it's the annotation update code's responsibility to make sure
-    # it doesn't commit any data when the edit key is incorrect.
+    # randomize the edit key and reset the edit version, if we're editing. we
+    # don't use a transaction here because it's the annotation update code's
+    # responsibility to make sure it doesn't commit any data when the edit key
+    # is incorrect or its document is out of date.
     if not nd.view:
         edit_key = secrets.token_bytes(16)
         annotation.edit_key = edit_key
+        annotation.edit_version = 0
         annotation.save()
 
     # find all the visible polygons attached to this annotation
@@ -175,6 +177,8 @@ def get_annotation_xml(request, filename):
     # back any changes.
     if not nd.view:
         xml.append("<edit_key>{}</edit_key>".format(edit_key.hex()))
+        # edit version always starts from 0
+        xml.append("<edit_version>0</edit_version>")
     # specify which image file to show for this annotation. since we look up
     # images by their ID, the folder doesn't matter as long as it's constant.
     # it's not clear if this is actually used though?
@@ -228,8 +232,7 @@ def get_annotation_xml(request, filename):
 # SuspiciousOperation exception, which causes the tool to reload and get the
 # correct annotations back from the database.
 
-# handle understanding the document and updating the database. if this raises
-# any kind of exception, the database transaction is rolled back.
+# handle understanding the document and updating the database.
 def process_annotation_xml(request, root):
     if root.tag != "annotation":
         raise SuspiciousOperation("not an annotation")
@@ -247,17 +250,25 @@ def process_annotation_xml(request, root):
         raise SuspiciousOperation("invalid anno id") from e
 
     # make sure the edit key matches. note that this is optimistic; it could be
-    # changed out from under us while we are processing. we re-check right
-    # before committing the data, but checking here saves processing in the
-    # common case.
+    # changed out from under us while we are processing. we confirm it in the
+    # transaction to store the updated data, but if we can reject it now, we
+    # won't need to process the file or hit the database in the common case
     try:
         edit_key = bytes.fromhex(root.find("edit_key").text)
         if edit_key != bytes(annotation.edit_key):
             raise Exception("edit key does not match")
+        edit_version = int(root.find("edit_version").text)
     except Exception as e:
         # probably will be modified in the future; a bad or missing edit key
         # isn't necessarily suspicious
         raise SuspiciousOperation("invalid edit key") from e
+
+    # make sure this document has newer polygons. it might not if the documents
+    # arrive out of order, and it would be unfortunate if the polygons got
+    # turned back and work got lost as a result.
+    if annotation.edit_version >= edit_version:
+        # if it doesn't, just stop processing. not an error.
+        return
 
     # pull out all the polygons defined in this document. once that is done, we
     # will apply them to the database.
@@ -336,15 +347,17 @@ def process_annotation_xml(request, root):
         # now we can be sure the edit key is correct
         if edit_key != bytes(annotation.edit_key):
             raise SuspiciousOperation("invalid edit key")
-        # the edit key can't be changed until the transaction finishes, ensuring
-        # that any changes are in the database before a new edit can happen.
+        # and that we actually have new polygons
+        if annotation.edit_version >= edit_version:
+            # if we don't, just stop processing. not an error.
+            return
+        # the edit key and version can't be changed until the transaction
+        # finishes, ensuring that any changes are in the database before a new
+        # edit can happen.
 
         # re-verify the permissions for the same reason
         require_anno_perms(request.user, annotation, "edit")
 
-        # measure if anything changed in the annotation so we can update its
-        # last edited time.
-        annotation_changed = False
         for anno_poly in anno_polygons:
             # measure if anything changed in the polygon so we can update its
             # last edited time.
@@ -392,13 +405,14 @@ def process_annotation_xml(request, root):
                 poly.points = anno_poly.points
                 poly.deleted = anno_poly.deleted
                 poly.last_edit_time = datetime.now(timezone.utc)
+                # we could batch save the polygons but typically only one
+                # polygon gets changed per request
                 poly.save()
-                annotation_changed = True
 
-        if annotation_changed or total_score != annotation.score:
-            annotation.score = total_score
-            annotation.last_edit_time = datetime.now(timezone.utc)
-            annotation.save(update_fields=('last_edit_time', 'score',))
+        annotation.score = total_score
+        annotation.last_edit_time = datetime.now(timezone.utc)
+        annotation.edit_version = edit_version
+        annotation.save()
 
 
 # parse the XML data. the request can't be, by default, bigger than 2.5MiB, so
