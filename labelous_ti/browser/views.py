@@ -70,15 +70,22 @@ def handle_browse_modify(request):
                 # exist. we select for update so that another process can't turn
                 # the same image into another annotation, but we skip locked so
                 # that process can choose another image.
+                not_on_existing_anno = ~Exists(existing_annos.filter(
+                    image__pk=OuterRef("pk")))
+                # we pick the image with the least number of existing
+                # annotations so that images get annotated evenly
                 new_image = Image.objects.select_for_update(
-                    skip_locked=True).filter(~Exists(existing_annos.filter(
-                        image__pk=OuterRef("pk")))).filter(
-                            available=True, deleted=False)[0:1].get()
+                    skip_locked=True).filter(not_on_existing_anno).filter(
+                        available=True, deleted=False).order_by(
+                            "num_annotations")[0:1].get()
                 # now we can create an annotation for it
                 new_anno = Annotation(
                     annotator=request.user, image=new_image,
                     edit_key=b"", last_edit_time=datetime.now(timezone.utc))
                 new_anno.save()
+                # mark that the image has another annotation attached
+                new_image.num_annotations += 1
+                new_image.save()
         except Image.DoesNotExist:
             messages.add_message(request, messages.ERROR,
                 "There are no more images to annotate. Good job!")
@@ -102,6 +109,11 @@ def handle_browse_modify(request):
 
             if action == "delete":
                 annotation.deleted = True
+                # subtract 1 from the associated image's annotation count
+                image = Image.objects.select_for_update().get(
+                    pk=annotation.image.pk)
+                image.num_annotations -= 1
+                image.save()
                 messages.add_message(request, messages.SUCCESS,
                     "Annotation deleted.")
             elif action == "review":

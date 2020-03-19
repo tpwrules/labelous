@@ -41,9 +41,10 @@ class Image(models.Model):
     # upload_time: time when this image was uploaded. automatically set when
     # this object is created.
     upload_time = models.DateTimeField(auto_now_add=True)
-    # priority: some metric of how important this image is. not sure what
-    # it will be used for yet, if at all.
-    priority = models.FloatField(default=1)
+    # num_annotations: how many annotations there are for this image. not
+    # necessarily 100% accurate. used to give users the image with the least
+    # annotations.
+    num_annotations = models.IntegerField(default=0)
 
     class Meta:
         # enforce that non-uploaded images are always deleted. the rest of the
