@@ -471,9 +471,16 @@ def next_annotation(request):
             deleted=False, finished=False).order_by("pk")[0:1].get()
     except Annotation.DoesNotExist:
         # we must be at the end of the loop. get the first annotation instead
-        next_annotation = Annotation.objects.filter(
-            annotator=request.user, image__deleted=False, locked=nd.view,
-            deleted=False, finished=False).order_by("pk")[0:1].get()
+        try:
+            next_annotation = Annotation.objects.filter(
+                annotator=request.user, image__deleted=False, locked=nd.view,
+                deleted=False, finished=False).order_by("pk")[0:1].get()
+        except Annotation.DoesNotExist:
+            # the user doesn't have any in this category? just give back the
+            # file they're currently working on
+            return HttpResponse(
+                "<out><dir>f</dir><file>{}</file></out>".format(
+                    request.GET["image"]), content_type="text/xml")
 
     return HttpResponse(
         "<out><dir>f</dir><file>{}.jpg</file></out>".format(encode_filename(
@@ -496,9 +503,16 @@ def prev_annotation(request):
             deleted=False, finished=False).order_by("pk")[0:1].get()
     except Annotation.DoesNotExist:
         # we must be at the start of the loop. get the first annotation instead
-        prev_annotation = Annotation.objects.filter(
-            annotator=request.user, image__deleted=False, locked=nd.view,
-            deleted=False, finished=False).order_by("-pk")[0:1].get()
+        try:
+            prev_annotation = Annotation.objects.filter(
+                annotator=request.user, image__deleted=False, locked=nd.view,
+                deleted=False, finished=False).order_by("-pk")[0:1].get()
+        except Annotation.DoesNotExist:
+            # the user doesn't have any in this category? just give back the
+            # file they're currently working on
+            return HttpResponse(
+                "<out><dir>f</dir><file>{}</file></out>".format(
+                    request.GET["image"]), content_type="text/xml")
 
     return HttpResponse(
         "<out><dir>f</dir><file>{}.jpg</file></out>".format(encode_filename(
