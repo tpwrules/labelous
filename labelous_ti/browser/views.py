@@ -140,8 +140,10 @@ def handle_browse_modify(request):
         # tries to mess with it again in another. we don't need to rudely
         # respond with a 400, we just kindly ask the user to do it again now
         # that the page is fresh.
-        messages.add_message(request, messages.ERROR,
-            "An inconsistency was detected. Please retry the operation.")
+            messages.add_message(request, messages.ERROR,
+                "An inconsistency has been detected. This may occur if "
+                "operations on the same annotation are attempted in multiple "
+                "tabs. Please retry the operation.")
 
     return redirect(destination)
 
@@ -188,7 +190,9 @@ def review_annotations(request):
             # with a 400, we just kindly ask the administrator to try again now
             # that the page is fresh.
             messages.add_message(request, messages.ERROR,
-                "An inconsistency was detected. Please retry the operation.")
+                "An inconsistency has been detected. This may occur if "
+                "operations on the same annotation are attempted in multiple "
+                "tabs. Please retry the operation.")
 
         return redirect("anno_review")
 
@@ -233,7 +237,9 @@ def review_images(request):
             # with a 400, we just kindly ask the administrator to try again now
             # that the page is fresh.
             messages.add_message(request, messages.ERROR,
-                "An inconsistency was detected. Please retry the operation.")
+                "An inconsistency has been detected. This may occur if "
+                "operations on the same annotation are attempted in multiple "
+                "tabs. Please retry the operation.")
 
         return redirect("image_review")
 
