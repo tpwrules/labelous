@@ -331,8 +331,7 @@ def set_reset_token(user):
 
 def do_create_account(request):
     new_email = request.POST["create_email"]
-    # user gets a random username since we only use emails
-    new_user = User.objects.create_user(secrets.token_hex(16), new_email)
+    new_user = User.objects.create_user(new_email)
     # create reset token so user can change their password
     reset_token = set_reset_token(new_user)
     new_user.save()
@@ -349,6 +348,9 @@ def account_create(request):
         except IntegrityError:
             messages.add_message(request, messages.ERROR,
                 "User with that e-mail already exists.")
+        else:
+            messages.add_message(request, messages.SUCCESS,
+                "User created successfully.")
 
     return render(request, "browser/account.html",
         {"token_url": token_url})
