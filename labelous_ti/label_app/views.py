@@ -103,8 +103,7 @@ class IncorrectPermissions(SuspiciousOperation):
 # that the annotation should actually be shown and stuff. throws an exception if
 # the permissions aren't correct, or returns if they are.
 def require_anno_perms(user, annotation, perms):
-    # for now, all staff are reviewers
-    is_reviewer = user.is_staff
+    is_reviewer = user.has_perm("browser.reviewer")
 
     if perms == "view":
         if annotation.annotator == user:

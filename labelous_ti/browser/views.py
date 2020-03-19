@@ -4,7 +4,7 @@ from django.core.exceptions import SuspiciousOperation
 from django.contrib import messages
 from django.db.models import OuterRef, Exists
 from django.db import transaction
-from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.decorators import permission_required
 
 from datetime import datetime, timezone
 
@@ -128,7 +128,7 @@ def handle_browse_modify(request):
 
 
 # let reviewers review others' annotations
-@staff_member_required
+@permission_required("browser.reviewer", raise_exception=True)
 def review_annotations(request):
     if request.method == "POST":
         try:
@@ -180,7 +180,7 @@ def review_annotations(request):
         {"annotations": annotations})
 
 # and newly uploaded images
-@staff_member_required
+@permission_required("browser.reviewer", raise_exception=True)
 def review_images(request):
     if request.method == "POST":
         try:
