@@ -1,9 +1,9 @@
 from django.db import models
-from django.contrib.auth.models import User
 from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.urls import reverse
 
+from browser.models import User
 from image_mgr.models import Image
 from .filename_smuggler import *
 

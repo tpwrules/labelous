@@ -1,11 +1,11 @@
 from django.db import models
 from django.db.models import Q
-from django.contrib.auth.models import User
 from django.urls import reverse
 from django.conf import settings
 
 import math
 
+from browser.models import User
 from label_app.filename_smuggler import encode_filename
 
 # maximum size of thumbnail in each dimension. we want thumbnails to all be the
