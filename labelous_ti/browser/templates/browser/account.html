@@ -1,0 +1,100 @@
+{% extends "browser/base.html" %}
+{% block body %}
+<div id="left">
+    <ul class="menu">
+        <li><a href="{% url 'account_info' %}"{% if request.resolver_match.url_name == "account_info" %} class="active"{% endif %}>Account Information</a></li>
+        <li><a href="{% url 'account_changepw' %}"{% if request.resolver_match.url_name == "account_changepw" %} class="active"{% endif %}>Change Password</a></li>
+        {% if perms.browser.account_manager %}
+        <li><a href="{% url 'account_create' %}"{% if request.resolver_match.url_name == "account_create" %} class="active"{% endif %}>Create Account</a></li>
+        <li><a href="{% url 'account_maketoken' %}"{% if request.resolver_match.url_name == "account_maketoken" %} class="active"{% endif %}>Generate Reset Token</a></li>
+        {% endif %}
+    </ul>
+</div>
+<div id="content">
+    <div id="topCenter">
+        <div id="pathway" style="width:100%; height:100%; margin-bottom:20px;">
+        {% if request.resolver_match.url_name == "account_info" %}
+            Account Information
+        {% elif request.resolver_match.url_name == "account_changepw" %}
+            Change Password
+        {% elif request.resolver_match.url_name == "account_create" %}
+            Create Account
+        {% elif request.resolver_match.url_name == "account_maketoken" %}
+            Generate Password Reset Token
+        {% endif %}
+    {% if messages %}
+    <ul style="color:#000;">
+        {% for message in messages %}
+        <li style="margin-bottom:0em;">{{ message }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+        </div>
+    </div>
+
+    <div>
+        {% if request.resolver_match.url_name == "account_info" %}
+            {% if perms.browser.account_manager %}
+            <form method="get">
+                <label for="user">User e-mail: </label>
+                <input type="text" name="user" />
+                <input type="submit" value="Look Up" />
+            </form>
+            {% endif %}
+            E-mail: {{ info_email }}<br />
+        {% elif request.resolver_match.url_name == "account_changepw" %}
+            {% if request.user.is_authenticated %}
+            Please enter your current password, then your new password twice to prevent mistakes.
+            {% else %}
+            You must <a href="{% url 'login' %}?next={{ request.path }}">log in</a> to change your password. If you have forgotten your password, please request a password reset token from an administrator and enter it in the field below. Then, enter your new password twice to prevent mistakes.
+            {% endif %}
+            <br /><br />Please note the following password requirements:
+            <ul>
+                {% for help in password_helps %}
+                <li>{{ help }}</li>
+                {% endfor %}
+            </ul>
+            <form method="post">
+                {% csrf_token %}
+                {% if request.user.is_authenticated %}
+                <label for="old_pw">Old password: </label>
+                <input type="password" name="old_pw" required="required" />
+                {% else %}
+                <label for="token">Password reset token: </label>
+                <input type="password" name="token" value="{{ password_reset_token }}" required="required" />
+                {% endif %}
+                <br />
+                <label for="new_pw1">New password: </label>
+                <input type="password" name="new_pw1" required="required" />
+                <br />
+                <label for="new_pw2">New password (again): </label>
+                <input type="password" name="new_pw2" required="required" />
+                <br />
+                <input type="submit" value="Change Password" />
+            </form>
+        {% elif request.resolver_match.url_name == "account_create" %}
+            Enter the e-mail of the user to create. Once the account is created, you must give the resulting link to the user so they can set their password.
+            <form method="post">
+                {% csrf_token %}
+                <label for="create_email">E-mail: </label>
+                <input type="email" name="create_email" required="required" />
+                <input type="submit" value="Create" />
+            </form>
+            {% if token_url %}
+            <p><b>Direct the user to {{ token_url }} so they can set their password and log in.</b></p>
+            {% endif %}
+        {% elif request.resolver_match.url_name == "account_maketoken" %}
+            Enter the e-mail of the user whose password needs to be reset. You must give the resulting link to the user so they can reset their password. Their password will not be changed unless they use the token.
+            <form method="post">
+                {% csrf_token %}
+                <label for="reset_email">E-mail: </label>
+                <input type="email" name="reset_email" required="required" />
+                <input type="submit" value="Reset" />
+            </form>
+            {% if token_url %}
+            <p><b>Direct the user to {{ token_url }} so they can reset their password and log in.</b></p>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

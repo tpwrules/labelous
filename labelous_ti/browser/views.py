@@ -1,13 +1,18 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, reverse
 from django.http import HttpResponse, Http404
-from django.core.exceptions import SuspiciousOperation
+from django.core.exceptions import SuspiciousOperation, ValidationError
 from django.contrib import messages
 from django.db.models import OuterRef, Exists
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.contrib.auth.decorators import permission_required
+from django.contrib.auth.password_validation import (
+    validate_password, password_validators_help_texts)
+from django.contrib.auth import authenticate
 
 from datetime import datetime, timezone
+import secrets
 
+from .models import User
 from image_mgr.models import Image
 from label_app.models import Annotation
 
@@ -223,3 +228,133 @@ def review_images(request):
 
     return render(request, "browser/review.html", 
         {"images": images})
+
+
+def account_info(request):
+    user = request.user
+    if "user" in request.GET and request.GET["user"] != "":
+        if request.user.has_perm("browser.account_manager"):
+            try:
+                user = User.objects.get(email=request.GET["user"])
+            except User.DoesNotExist:
+                messages.add_message(request, messages.ERROR,
+                    "User doesn't exist.")
+        else:
+            # user isn't authorized to look up other users. normally the user
+            # wouldn't see the form, so we can be a little snarky at users who
+            # tried to poke at things
+            messages.add_message(request, messages.ERROR,
+                "Mind your own business.")
+
+    return render(request, "browser/account.html",
+        {"info_email": user.email})
+
+def do_changepw(request):
+    if request.user.is_authenticated:
+        try:
+            old_pw = request.POST["old_pw"]
+            new_pw1 = request.POST["new_pw1"]
+            new_pw2 = request.POST["new_pw2"]
+        except KeyError:
+            messages.add_message(request, messages.ERROR,
+                "Something went wrong. Please try again.")
+            return
+        if authenticate(email=request.user.email, password=old_pw) is None:
+            messages.add_message(request, messages.ERROR,
+                "Password is incorrect.")
+            return
+        user = request.user
+    else:
+        try:
+            token = request.POST["token"]
+            new_pw1 = request.POST["new_pw1"]
+            new_pw2 = request.POST["new_pw2"]
+        except KeyError:
+            messages.add_message(request, messages.ERROR,
+                "Something went wrong. Please try again.")
+            return
+        try:
+            user = User.objects.get(password_reset_token=bytes.fromhex(token))
+        except (User.DoesNotExist, ValueError):
+            messages.add_message(request, messages.ERROR,
+                "Password reset token is incorrect.")
+            return
+
+    if new_pw1 != new_pw2:
+        messages.add_message(request, messages.ERROR,
+            "Passwords do not match.")
+        return
+    try:
+        validate_password(new_pw1, user=user)
+    except ValidationError as e:
+        messages.add_message(request, messages.ERROR,
+            "Password not changed: "+",".join(e))
+        return
+
+    user.set_password(new_pw1)
+    user.password_reset_token = None
+    user.save()
+    messages.add_message(request, messages.SUCCESS,
+        "Password changed successfully.") 
+
+
+def account_changepw(request):
+    try:
+        password_reset_token = request.GET["token"]
+    except KeyError:
+        password_reset_token = ""
+
+    if request.method == "POST":
+        do_changepw(request)
+
+    return render(request, "browser/account.html",
+        {"password_helps": password_validators_help_texts(),
+         "password_reset_token": password_reset_token})
+
+# make a reset token, set it on the user, then return the display version
+def set_reset_token(user):
+    token = secrets.token_bytes(16)
+    user.password_reset_token = token
+    return token.hex()
+
+def do_create_account(request):
+    new_email = request.POST["create_email"]
+    # user gets a random username since we only use emails
+    new_user = User.objects.create_user(secrets.token_hex(16), new_email)
+    # create reset token so user can change their password
+    reset_token = set_reset_token(new_user)
+    new_user.save()
+    return reset_token
+
+@permission_required("browser.account_manager", raise_exception=True)
+def account_create(request):
+    token_url = None
+    if request.method == "POST":
+        try:
+            reset_token = do_create_account(request)
+            token_url = request.build_absolute_uri(
+                reverse("account_changepw")+"?token="+reset_token)
+        except IntegrityError:
+            messages.add_message(request, messages.ERROR,
+                "User with that e-mail already exists.")
+
+    return render(request, "browser/account.html",
+        {"token_url": token_url})
+
+@permission_required("browser.account_manager", raise_exception=True)
+def account_maketoken(request):
+    token_url = None
+    if request.method == "POST":
+        try:
+            user = User.objects.get(email=request.POST["reset_email"])
+        except User.DoesNotExist:
+            messages.add_message(request, messages.ERROR,
+                "User doesn't exist.")
+        else:
+            reset_token = set_reset_token(user)
+            user.save()
+            token_url = request.build_absolute_uri(
+                reverse("account_changepw")+"?token="+reset_token)
+
+    return render(request, "browser/account.html",
+        {"token_url": token_url})

@@ -33,6 +33,7 @@
                     {% if perms.browser.reviewer %}
                     <li><a href="{% url 'anno_review' %}"{% if request.resolver_match.url_name == "anno_review" %} class="active"{% endif %}{% if request.resolver_match.url_name == "image_review" %} class="active"{% endif %}>Review</a></li>
                     {% endif %}
+                    <li><a href="{% if request.user.is_authenticated %}{% url 'account_info' %}{% else %}{% url 'account_changepw' %}{% endif %}"{% if request.resolver_match.url_name|slice:":8" == "account_" %} class="active"{% endif %}>Account</a></li>
                     <li>
                         <a>test dropdown</a>
                         <ul>
