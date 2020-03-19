@@ -24,7 +24,5 @@ urlpatterns = [
     path('upload/', image_mgr.upload_views.upload_image, name="upload_image"),
     path('admin/', admin.site.urls),
     path('label/', include('label_app.urls', namespace="label_app")),
-    path('accounts/login/', auth_views.LoginView.as_view(), name="login"),
-    path('accounts/logout/', auth_views.LogoutView.as_view(), name="logout"),
     path('', include('browser.urls')),
 ]

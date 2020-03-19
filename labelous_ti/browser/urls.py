@@ -2,11 +2,10 @@ from django.urls import path, re_path
 from django.shortcuts import render
 
 from . import views
+from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_required
 
-#app_name = "browser"
 urlpatterns = [
-    path('', lambda request: render(request, "browser/home.html"), name="home"),
     path('credits', views.credits_page, name="credits_page"),
 
     path('browse/in_progress/', login_required(views.browse_view),
@@ -20,4 +19,8 @@ urlpatterns = [
         name="anno_review"),
     path('review/images/', login_required(views.review_images),
         name="image_review"),
+
+    path('', auth_views.LoginView.as_view(
+        redirect_authenticated_user=True), name="login"),
+    path('account/logout/', auth_views.LogoutView.as_view(), name="logout"),
 ]

@@ -1,19 +1,20 @@
-<html>
-<head><title>Log in please</title></head>
-<body>
-
-<h2>Log In</h2>
-
+{% extends "browser/base.html" %}
+{% block body %}
+<div id="content">
+    <h1 class="title">LabelMe</h1>
+    <p>If you're already logged in, click on Annotate above to get started!</p>
+<div id="signform">
+    <h2>Log In</h2>
 {% if form.errors %}
 <p>Your email and password didn't match. Please try again.</p>
 {% endif %}
 
 {% if next %}
     {% if user.is_authenticated %}
-    <p>Your account doesn't have access to this page. To proceed,
-    please login with an account that has access.</p>
+    <p><b>Your account doesn't have access to this page. To proceed,
+    please login with an account that has access.</b></p>
     {% else %}
-    <p>Please log in to see this page.</p>
+    <p><b>Please log in to see this page.</b></p>
     {% endif %}
 {% endif %}
 
@@ -33,11 +34,17 @@
 <input type="submit" value="Log In">
 <input id="nv" type="hidden" name="next" value="{{ next }}">
 </form>
+<br clear="all" />
+</div>
 
+{# ensure the url fragment gets carried through as it controls the tool. if it got lost, then the user visiting a tool link and having to log in would lead to a broken tool #}
 <script type="text/javascript">
     var h = window.location.hash;
     document.getElementById("nf").action += h;
     document.getElementById("nv").value += h;
 </script>
 
-</body>
+<p>blah blah blah see us to get account</p>
+
+</div>
+{% endblock %}
