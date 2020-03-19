@@ -38,6 +38,21 @@ resources.update([
     "browserTools/css/main4.css",
 ])
 
+# one file the tool depends on is the names of all the priority objects. we have
+# to make that file especially for it.
+objects = []
+with open(script_dir/"label_priorities.txt", "r") as priorities:
+    for obj in priorities.readlines():
+        objects.append(obj.split(",", 1)[1][:-1])
+objects.sort()
+obj_script = ['<script type="text/javascript">']
+obj_script.append("var object_choices = [")
+for obj in objects:
+    obj_script.append('"{}",'.format(obj))
+obj_script.append("]")
+obj_script.append("</script>")
+tool = tool.replace("<!--OBJECT_LIST-->", "\n".join(obj_script))
+
 # now we need to update the tool page with the new static links we're gonna make
 def to_static(path):
     return "/static/label_app/"+path.split("/")[-1]

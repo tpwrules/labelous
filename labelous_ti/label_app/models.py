@@ -28,6 +28,9 @@ class Annotation(models.Model):
     edit_key = models.BinaryField(max_length=16)
     # when this annotation, or any of its polygons, was last changed.
     last_edit_time = models.DateTimeField()
+    # total score of all the objects in the annotation. calculated when the xml
+    # is submitted.
+    score = models.FloatField(default=0)
 
     # return the url that goes to the tool to edit this annotation
     @property

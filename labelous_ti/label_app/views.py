@@ -11,10 +11,14 @@ import defusedxml.ElementTree
 import types
 from datetime import datetime, timezone
 import secrets
+import pathlib
+import time
 
 from .models import Annotation, Polygon
 from image_mgr.models import Image, THUMBNAIL_SIZE
 from .filename_smuggler import *
+
+script_dir = pathlib.Path(__file__).resolve(strict=True).parent
 
 # THEORY OF OPERATION: COMMUNICATIONS
 
@@ -321,6 +325,9 @@ def process_annotation_xml(request, root):
     # plus index in the file
     polygons_by_index = {p.anno_index: p
         for p in polygons_by_id.values() if p.anno_index is not None}
+    # accumulate score as we process the polygons
+    object_scores = load_object_scores()
+    total_score = 0
     with transaction.atomic():
         # reload the annotation, this time while selected for update. this
         # ensures that nobody else can change it until the transaction finishes.
@@ -367,6 +374,9 @@ def process_annotation_xml(request, root):
                             annotation=annotation, anno_index=anno_poly.index)
                         polygon_changed = True
 
+            # labels not on the list get a score of 0
+            total_score += object_scores.get(anno_poly.name, 0)
+
             if polygon_changed == True: pass
             elif poly.label_as_str != anno_poly.name: polygon_changed = True
             elif poly.notes != anno_poly.attributes: polygon_changed = True
@@ -385,9 +395,10 @@ def process_annotation_xml(request, root):
                 poly.save()
                 annotation_changed = True
 
-        if annotation_changed:
+        if annotation_changed or total_score != annotation.score:
+            annotation.score = total_score
             annotation.last_edit_time = datetime.now(timezone.utc)
-            annotation.save(update_fields=('last_edit_time',))
+            annotation.save(update_fields=('last_edit_time', 'score',))
 
 
 # parse the XML data. the request can't be, by default, bigger than 2.5MiB, so
@@ -524,3 +535,28 @@ def get_annotation_svg(request, filename):
     svg.append('</svg>')
 
     return HttpResponse(svg, content_type="image/svg+xml")
+
+# manage the list of objects and their scores. since they aren't in the
+# database, we have to load them from the file every so often so admins can
+# update the scores in a timely manner.
+object_scores_cache = None
+object_last_loaded = -float("inf")
+def load_object_scores():
+    global object_scores_cache, object_last_loaded
+    # were the labels loaded in the last 5 minutes?
+    now = time.monotonic()
+    if object_last_loaded >= now-300:
+        # just return the cached ones
+        return object_scores_cache
+    object_scores = {}
+    with open(script_dir/"label_priorities.txt", "r") as priorities:
+        for obj in priorities.readlines():
+            if obj == "" or obj == "\n": continue
+            if obj.endswith("\n"): obj = obj[:-1]
+            score, name = obj.split(",", 1)
+            score = float(score)
+            object_scores[name] = score
+
+    object_scores_cache = object_scores
+    object_last_loaded = now
+    return object_scores_cache

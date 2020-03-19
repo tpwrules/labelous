@@ -1,0 +1,27 @@
+5,hazmat
+4.8,utility shut offs - electric
+4.8,utility shut offs - gas
+4.8,utility shut offs - water
+4.6,building entrance-exit
+4.6,fire hydrant
+4.4,fire escape access
+4.4,roof access
+4.4,stairway
+4,fire alarm
+4,fire wall
+4,mechanical equipment
+3.8,fire suppression systems - sprinkler
+3.8,fixed equipment
+3.8,interior structural features - pillar
+3.8,standpipe connection
+3.8,window
+3.6,fire alarm switch
+3.6,fire door
+3.6,fire suppression systems - extinguisher 
+3.6,sign exit
+3.2,emergency lighting
+3.2,sign stop
+3.2,smoke detector
+3,AED (Automated External Defibrillators)
+3,IFAK (Individual First Aid Kit)
+2.4,server equipment
