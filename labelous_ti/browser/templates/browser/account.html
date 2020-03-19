@@ -44,9 +44,9 @@
             E-mail: {{ info_email }}<br />
         {% elif request.resolver_match.url_name == "account_changepw" %}
             {% if request.user.is_authenticated %}
-            Please enter your current password, then your new password twice to prevent mistakes.
+            Please enter your current password, then your new password twice (to prevent mistakes).
             {% else %}
-            You must <a href="{% url 'login' %}?next={{ request.path }}">log in</a> to change your password. If you have forgotten your password, please request a password reset token from an administrator and enter it in the field below. Then, enter your new password twice to prevent mistakes.
+            You must <a href="{% url 'login' %}?next={{ request.path }}">log in</a> to change your password. If you have forgotten your password, please request a password reset token from an administrator and enter it in the field below. Then, enter your new password twice (to prevent mistakes).
             {% endif %}
             <br /><br />Please note the following password requirements:
             <ul>

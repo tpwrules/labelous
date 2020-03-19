@@ -1,4 +1,4 @@
-# we have to get  several pieces of information into the tool and back out to us
+# we have to get several pieces of information into the tool and back out to us
 # when it accesses its api. unfortunately the only thing it takes is a filename,
 # and the only thing it gives back to us is a filename. naturally, we then
 # encode all the stuff that's important to us into the filename.

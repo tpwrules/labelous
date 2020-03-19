@@ -32,7 +32,7 @@ for stylesheet in css_pattern.findall(tool):
 resources.update([
     # the favicon isn't matched by any of those patterns or the src we do below
     "Icons/favicon16.ico",
-    # and we need the on-brand CSS for the browser component,
+    # and we need the on-brand CSS for the browser component
     "browserTools/css/accordion.css",
     "browserTools/css/gallery4.css",
     "browserTools/css/main4.css",

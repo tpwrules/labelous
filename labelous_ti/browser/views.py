@@ -19,7 +19,8 @@ from label_app.models import Annotation
 def credits_page(request):
     return render(request, "browser/credits.html")
 
-# show all the annotations the user has and let them annotate them
+# show all the annotations the user has and give them options to edit the
+# annotation or otherwise modify them
 def browse_view(request):
     if request.method == "POST":
         return handle_browse_modify(request)
@@ -66,19 +67,19 @@ def handle_browse_modify(request):
                 # completed
                 existing_annos = Annotation.objects.filter(
                     annotator=request.user, deleted=False)
-                # then look for an image where an annotation for it doesn't
-                # exist. we select for update so that another process can't turn
-                # the same image into another annotation, but we skip locked so
-                # that process can choose another image.
+                # then look for an image that the user doesn't already have an
+                # annotation for. we select for update so that another process
+                # can't turn the same image into another annotation, but we skip
+                # locked so that that process can choose another image.
                 not_on_existing_anno = ~Exists(existing_annos.filter(
                     image__pk=OuterRef("pk")))
                 # we pick the image with the least number of existing
-                # annotations so that images get annotated evenly
+                # annotations so that no image gets left behind
                 new_image = Image.objects.select_for_update(
                     skip_locked=True).filter(not_on_existing_anno).filter(
                         available=True, deleted=False).order_by(
                             "num_annotations")[0:1].get()
-                # now we can create an annotation for it
+                # now we can create an annotation for that image
                 new_anno = Annotation(
                     annotator=request.user, image=new_image,
                     edit_key=b"", last_edit_time=datetime.now(timezone.utc))
@@ -110,6 +111,7 @@ def handle_browse_modify(request):
             if action == "delete":
                 annotation.deleted = True
                 # subtract 1 from the associated image's annotation count
+                # because one less annotation exists
                 image = Image.objects.select_for_update().get(
                     pk=annotation.image.pk)
                 image.num_annotations -= 1

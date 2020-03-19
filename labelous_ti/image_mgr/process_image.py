@@ -1,5 +1,5 @@
-# this file handles the whole image processing deal, from image data to disk
-# storage, thumbnail generation, and database update.
+# this file handles the whole image processing deal, from image data through
+# disk storage, thumbnail generation, and database update.
 
 from django.db import IntegrityError, transaction
 from django.conf import settings
@@ -33,7 +33,7 @@ MAX_IMAGE_SIZE = 10*1024*1024 # 10MiB
 # criterion. But this is all well-known stuff, and at least we're not using
 # ImageMagick...
 
-# The web allows the extra special category of polyglot-related skullduggery. 
+# The web allows the extra special category of skullduggery: polyglot files. 
 # For example, this (http://lcamtuf.coredump.cx/squirrel/) image is a completely
 # valid JPEG that's also completely valid HTML page. If an attacker can upload
 # such an image to our site and get a user to load it (i.e. just send them a
@@ -90,8 +90,8 @@ MAX_IMAGE_SIZE = 10*1024*1024 # 10MiB
 # We will accept that possibility here because we don't expect especially
 # frequent image uploads, and any offenders could be easily identified and have
 # their accounts disabled. But keep this problem in mind for other situations.
-# It may be appropriate to reduce maximum image size, processing time, and
-# memory usage thresholds.
+# It may be appropriate to reduce maximum file size, processing time, and memory
+# usage thresholds.
 
 
 # thrown when something goes wrong during processing

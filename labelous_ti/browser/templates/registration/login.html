@@ -1,12 +1,12 @@
 {% extends "browser/base.html" %}
 {% block body %}
 <div id="content">
-    <h1 class="title">LabelMe</h1>
-    <p>If you're already logged in, click on Annotate above to get started!</p>
+    <h1 class="title">Welcome to Labelous</h1>
+    <p>Please contact an administrator to obtain an account.</p>
 <div id="signform">
     <h2>Log In</h2>
 {% if form.errors %}
-<p>Your email and password didn't match. Please try again.</p>
+<p>The email and/or password you provided were incorrect. Please try again.</p>
 {% endif %}
 
 {% if next %}
@@ -43,8 +43,6 @@
     document.getElementById("nf").action += h;
     document.getElementById("nv").value += h;
 </script>
-
-<p>blah blah blah see us to get account</p>
 
 </div>
 {% endblock %}

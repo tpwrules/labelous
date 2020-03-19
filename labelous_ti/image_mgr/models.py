@@ -10,7 +10,7 @@ from label_app.filename_smuggler import encode_filename
 
 # maximum size of thumbnail in each dimension. we want thumbnails to all be the
 # same height, so we allow a 3:1 aspect ratio. images that wide probably won't
-# ever be uploaded (but it's okay if they are)
+# ever be uploaded (but it's okay if they are, we will pad the box)
 THUMBNAIL_SIZE = (576, 192)
 
 # hold data about a particular image in the system
@@ -18,11 +18,11 @@ class Image(models.Model):
     # where the image is on the filesystem, relative to the image storage dir
     file_path = models.CharField(max_length=255)
     # available: true if image is available for annotation. if false, users can
-    # see the image, and their own annotations (if any), but can't start
+    # see the image and their own annotations (if any), but can't start
     # annotating this image.
     available = models.BooleanField(default=False)
     # deleted: if the image still exists. if it's deleted, users can't see it
-    # even if they have annotations for it.
+    # or any annotations they have for it.
     deleted = models.BooleanField(default=False)
     # uploaded: if the image upload completed successfully. if this isn't true,
     # then the image was rejected for some reason, and it may not even be on

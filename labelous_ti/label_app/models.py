@@ -15,10 +15,11 @@ class Annotation(models.Model):
     # what image this annotation is for
     image = models.ForeignKey(Image, on_delete=models.CASCADE,
         related_name="annotations")
-    # locked: if true, the annotator cannot touch it anymore
+    # locked: if true, the annotator considers it complete and wishes to have it
+    # reviewed.
     locked = models.BooleanField(default=False)
-    # finished: if true, the annotator considers it complete and wishes to
-    # have it reviewed.
+    # finished: if true, the annotation has passed review and can no longer be
+    # edited 
     finished = models.BooleanField(default=False)
     # deleted: if true, annotation can't be seen anymore
     deleted = models.BooleanField(default=False)

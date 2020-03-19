@@ -12,17 +12,17 @@ function do_delete_image(image_id) {
     }
 }
 function do_accept_image(image_id) {
-    if (confirm("This image will be made available for everyone to annotate. Continue?")) {
+    if (confirm("This image will be made available for everyone to annotate. Make available?")) {
         do_modify("accept_image", image_id);
     }
 }
 function do_reject_anno(anno_id) {
-    if (confirm("This annotation will be returned for editing. Continue?")) {
+    if (confirm("This annotation will be returned for editing. Return?")) {
         do_modify("reject_anno", anno_id);
     }
 }
 function do_accept_anno(anno_id) {
-    if (confirm("This annotation will be approved and no more editing will be possible. Continue?")) {
+    if (confirm("This annotation will be approved and no more editing will be possible. Approve?")) {
         do_modify("accept_anno", anno_id);
     }
 }
