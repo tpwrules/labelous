@@ -467,18 +467,19 @@ def next_annotation(request):
     # current one. an arbitrary but consistent ordering.
     try:
         next_annotation = Annotation.objects.filter(
-            pk__gt=nd.anno_id, annotator=request.user,
-            deleted=False).order_by("pk")[0:1].get()
+            pk__gt=nd.anno_id, annotator=request.user, image__deleted=False,
+            locked=nd.view,
+            deleted=False, finished=False).order_by("pk")[0:1].get()
     except Annotation.DoesNotExist:
         # we must be at the end of the loop. get the first annotation instead
         next_annotation = Annotation.objects.filter(
-            annotator=request.user,
-            deleted=False).order_by("pk")[0:1].get()
+            annotator=request.user, image__deleted=False, locked=nd.view,
+            deleted=False, finished=False).order_by("pk")[0:1].get()
 
     return HttpResponse(
         "<out><dir>f</dir><file>{}.jpg</file></out>".format(encode_filename(
-            image_id=next_annotation.image.pk, anno_id=next_annotation.pk)),
-        content_type="text/xml")
+            image_id=next_annotation.image.pk, anno_id=next_annotation.pk,
+            view=nd.view)), content_type="text/xml")
 
 # return the previous annotation based on the filename given in the request
 def prev_annotation(request):
@@ -491,18 +492,19 @@ def prev_annotation(request):
     # than current one. an arbitrary but consistent ordering.
     try:
         prev_annotation = Annotation.objects.filter(
-            pk__lt=nd.anno_id, annotator=request.user,
-            deleted=False).order_by("pk")[0:1].get()
+            pk__lt=nd.anno_id, annotator=request.user, image__deleted=False,
+            locked=nd.view,
+            deleted=False, finished=False).order_by("pk")[0:1].get()
     except Annotation.DoesNotExist:
         # we must be at the start of the loop. get the first annotation instead
         prev_annotation = Annotation.objects.filter(
-            annotator=request.user,
-            deleted=False).order_by("-pk")[0:1].get()
+            annotator=request.user, image__deleted=False, locked=nd.view,
+            deleted=False, finished=False).order_by("-pk")[0:1].get()
 
     return HttpResponse(
         "<out><dir>f</dir><file>{}.jpg</file></out>".format(encode_filename(
-            image_id=prev_annotation.image.pk, anno_id=prev_annotation.pk)),
-        content_type="text/xml")
+            image_id=prev_annotation.image.pk, anno_id=prev_annotation.pk,
+            view=nd.view)), content_type="text/xml")
 
 # give an object's outline a color based on its name. taken from the JS so we
 # can give the same colors
