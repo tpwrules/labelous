@@ -97,6 +97,9 @@ MAX_IMAGE_SIZE = 10*1024*1024 # 10MiB
 # thrown when something goes wrong during processing
 class ProcessingFailure(Exception):
     pass
+# thrown when the image processed okay, but wasn't good enough
+class UnacceptableImage(Exception):
+    pass
 
 # read EXIF orientation from the image. orientation test images are available at
 # https://github.com/recurser/exif-orientation-examples
@@ -215,7 +218,7 @@ def process_image(uploader, name, orig_data):
 
     # re-check size since this function may not have been called from the view
     if len(orig_data) > MAX_IMAGE_SIZE:
-        raise ProcessingFailure("image too big")
+        raise UnacceptableImage("Image filesize is too large.")
     # make sure the file starts like a JPEG
     if len(orig_data) < 2 or orig_data[:2] != b"\xff\xd8":
         raise ProcessingFailure("missing JPEG SOI")
@@ -247,6 +250,10 @@ def process_image(uploader, name, orig_data):
 
     # from that data, we can more safely use Pillow to create a thumbnail
     image_size, thumb_data, thumb_size = make_thumbnail(rebuilt_data)
+    # make sure the image wasn't a thumbnail to begin with... we want some
+    # decent resolution to get actual detail out of the image.
+    if image_size[0] < 720 or image_size[1] < 720:
+        raise UnacceptableImage("Image dimensions are too small.")
 
     # calculate an appropriate filename. we take all the nice characters from
     # the original, but not so many that we don't have room for the rest of the

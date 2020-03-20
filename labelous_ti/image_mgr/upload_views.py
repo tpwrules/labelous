@@ -14,7 +14,8 @@ import io
 
 from .models import Image
 from label_app.filename_smuggler import *
-from .process_image import process_image, ProcessingFailure, MAX_IMAGE_SIZE
+from .process_image import (process_image, MAX_IMAGE_SIZE,
+    ProcessingFailure, UnacceptableImage)
 
 # this custom upload handler stores the upload to memory, and then stops
 # processing it if it's too big. amazingly, it doesn't actually seem possible to
@@ -111,6 +112,11 @@ def upload_image_post(request):
         print(str(e))
         messages.add_message(request, messages.ERROR,
             "The image appears corrupt. Please try a different image.")
+        return
+    except UnacceptableImage as e:
+        # we stopped liking it in the middle of processing
+        messages.add_message(request, messages.ERROR,
+            str(e)+" Please mind the upload guidelines.")
         return
 
     if was_new:
