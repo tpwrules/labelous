@@ -92,18 +92,21 @@ def upload_image_post(request):
 
     the_image = request.FILES["the_image"]
     assert(the_image.size <= MAX_IMAGE_SIZE)
-    if the_image.content_type != "image/jpeg":
-        # if the client doesn't claim it's a jpeg, trust them
+
+    the_image_data = the_image.read()
+    # make sure the file starts like a JPEG. we ignore the content_type since
+    # who knows what it could be. it might be right but what if it's wrong?
+    if len(the_image_data) < 2 or the_image_data[:2] != b"\xff\xd8":
         messages.add_message(request, messages.ERROR,
             "The image format is not JPEG. Please mind the upload guidelines.")
         return
-    # it may still not be a jpeg even though the content type claims so!
+    # it may still not be a jpeg even though the header claims so!
 
     # but we let the processor handle that possibility. it returns whether or
     # not the image was new, or raises an exception if something went wrong.
     try:
         was_new = process_image(uploader=request.user,
-            name=the_image.name, orig_data=the_image.read())
+            name=the_image.name, orig_data=the_image_data)
     except ProcessingFailure as e:
         print(str(e))
         messages.add_message(request, messages.ERROR,

@@ -1,7 +1,7 @@
 {% extends "browser/base.html" %}
 {% block body %}
 <div id="content">
-    <h1 class="title">Upload</h1>
+    <h1 class="title">Upload Image</h1>
     {% if messages %}
     <ul style="color:#000;">
         {% for message in messages %}
@@ -14,5 +14,17 @@
         <input type="file" name="the_image">
         <input type="submit" value="Submit">
     </form>
+    <br />
+    <div>
+        <p>Upload Guidelines</p>
+        <ul>
+            <li>The image must be in JPEG format.</li>
+            <li>The maximum image filesize is 10MiB.</li>
+            <li>You must have rights to share the image or the image must be in the public domain.</li>
+            <li>Images should not contain other people's faces, identities, private information, etc.</li>
+            <li>Images must not contain offensive material. This includes nudity, graphic violence, sexual content, etc.</li>
+            <li>All uploads will be reviewed by an adminstrator prior to being available for annotation.</li>
+        </ul>
+    </div>
 </div>
 {% endblock %}
