@@ -3,6 +3,8 @@ from django.contrib.postgres.fields import ArrayField
 from django.core.exceptions import ValidationError
 from django.urls import reverse
 
+from datetime import datetime
+
 from browser.models import User
 from image_mgr.models import Image
 from .filename_smuggler import *
@@ -56,8 +58,10 @@ class Annotation(models.Model):
     # return the url of the SVG image of this annotation
     @property
     def svg_url(self):
+        # add timestamp to ensure the cache is reset if the annotation changes
+        timestamp = "?"+str(datetime.timestamp(self.last_edit_time))
         return reverse("label_app:anno_svg",
-            args=(encode_filename(anno_id=self.pk),))
+            args=(encode_filename(anno_id=self.pk),))+timestamp
 
 def validate_is_points(value):
     if len(value) % 2 != 0:

@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse, Http404
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import last_modified
 from django.core.exceptions import SuspiciousOperation
 from django.db import transaction
 from django.shortcuts import render
@@ -532,9 +533,7 @@ def calculate_object_color(name):
     color_idx = (((name_hash + 567) * 1048797) % len(object_colors))
     return object_colors[color_idx]
 
-# return a pretty SVG of the requested annotation
-def get_annotation_svg(request, filename):
-    # look the annotation up
+def find_annotation_for_svg(request, filename):
     try:
         nd = decode_filename(filename, anno_id=True)
         annotation = Annotation.objects.get(pk=nd.anno_id,
@@ -542,6 +541,20 @@ def get_annotation_svg(request, filename):
         require_anno_perms(request.user, annotation, "view")
     except Exception as e:
         raise Http404("Annotation does not exist.") from e
+
+    return annotation
+
+def get_annotation_svg_modification_time(request, filename):
+    # look the annotation up
+    annotation = find_annotation_for_svg(request, filename)
+    # and return when the user last edited it
+    return annotation.last_edit_time
+
+# return a pretty SVG of the requested annotation, including cached
+@last_modified(get_annotation_svg_modification_time)
+def get_annotation_svg(request, filename):
+    # look the annotation up
+    annotation = find_annotation_for_svg(request, filename)
 
     # there's no real advantage to templating the svg, so we build it manually
     svg = ['<svg xmlns="http://www.w3.org/2000/svg" ']
