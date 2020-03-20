@@ -502,7 +502,7 @@ def prev_annotation(request):
         prev_annotation = Annotation.objects.filter(
             pk__lt=nd.anno_id, annotator=request.user, image__deleted=False,
             locked=nd.view,
-            deleted=False, finished=False).order_by("pk")[0:1].get()
+            deleted=False, finished=False).order_by("-pk")[0:1].get()
     except Annotation.DoesNotExist:
         # we must be at the start of the loop. get the first annotation instead
         try:
