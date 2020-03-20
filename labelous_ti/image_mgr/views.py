@@ -27,7 +27,7 @@ def image_file(request, filename):
 
     if settings.L_IMAGE_ACCEL:
         # ask nginx to serve the image on our behalf
-        resp = HttpResponse()
+        resp = HttpResponse(content_type="image/jpeg")
         resp["X-Accel-Redirect"] = image.image_redir_path
     else:
         f = open(image.image_path, "rb")
@@ -49,7 +49,7 @@ def image_thumb_file(request, filename):
 
     if settings.L_IMAGE_ACCEL:
         # ask nginx to serve the image on our behalf
-        resp = HttpResponse()
+        resp = HttpResponse(content_type="image/jpeg")
         resp["X-Accel-Redirect"] = image.thumb_redir_path
     else:
         f = open(image.thumb_path, "rb")
