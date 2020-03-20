@@ -24,3 +24,6 @@ L_IMAGE_PATH = pathlib.Path(
 # path to the mozjpeg jpegtran tool
 L_JPEGTRAN_PATH = pathlib.Path(
     "").resolve(strict=True)
+# if True, serve images through nginx X-Accel-Redirect
+L_IMAGE_ACCEL = not DEBUG
+

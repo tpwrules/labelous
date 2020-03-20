@@ -78,6 +78,16 @@ class Image(models.Model):
     def thumb_path(self):
         return settings.L_IMAGE_PATH/(self.file_path+"_thumb.jpg")
 
+    # path to x-accel-redirect version of image
+    @property
+    def image_redir_path(self):
+        return "/image_real/{}.jpg".format(self.file_path)
+
+    # path to x-accel-redirect version of thumbnail
+    @property
+    def thumb_redir_path(self):
+        return "/image_real/{}_thumb.jpg".format(self.file_path)
+
     # tuple of image (width, height)
     @property
     def image_size(self):

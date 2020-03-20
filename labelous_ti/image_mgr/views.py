@@ -25,11 +25,16 @@ def image_file(request, filename):
     if canonical != filename:
         return redirect(image.image_url, permanent=True)
 
-    # still clubbing baby seals
-    f = open(image.image_path, "rb")
-    resp = HttpResponse(content_type="image/jpeg")
-    shutil.copyfileobj(f, resp)
-    f.close()
+    if settings.L_IMAGE_ACCEL:
+        # ask nginx to serve the image on our behalf
+        resp = HttpResponse()
+        resp["X-Accel-Redirect"] = image.image_redir_path
+    else:
+        f = open(image.image_path, "rb")
+        resp = HttpResponse(content_type="image/jpeg")
+        shutil.copyfileobj(f, resp)
+        f.close()
+
     return resp
 
 # serve image thumbnails
@@ -42,9 +47,14 @@ def image_thumb_file(request, filename):
     except Exception as e:
         raise Http404("Image does not exist.") from e
 
-    # still clubbing baby seals
-    f = open(image.thumb_path, "rb")
-    resp = HttpResponse(content_type="image/jpeg")
-    shutil.copyfileobj(f, resp)
-    f.close()
+    if settings.L_IMAGE_ACCEL:
+        # ask nginx to serve the image on our behalf
+        resp = HttpResponse()
+        resp["X-Accel-Redirect"] = image.thumb_redir_path
+    else:
+        f = open(image.thumb_path, "rb")
+        resp = HttpResponse(content_type="image/jpeg")
+        shutil.copyfileobj(f, resp)
+        f.close()
+
     return resp
