@@ -68,7 +68,8 @@ function do_accept_anno(anno_id) {
             Current Score: {{ anno.score|floatformat }}<br>
             <a href="javascript:do_accept_anno({{ anno.pk }})">Accept</a><br>
             <a href="{{ anno.edit_url }}">Edit</a><br>
-            <a href="javascript:do_reject_anno({{ anno.pk }})">Reject</a>
+            <a href="javascript:do_reject_anno({{ anno.pk }})">Reject</a><br>
+            By: {{ anno.annotator.email }}
         </div></div>
         {% endfor %}
     {% elif request.resolver_match.url_name == "image_review" %}
@@ -76,7 +77,8 @@ function do_accept_anno(anno_id) {
         <div class="album"><div style="padding:0px; height:192px; min-width:128px;"><a href="{{ image.image_url }}"><img src="{{ image.image_thumb_url }}" style="max-height:192px"></a></div>
         <div class="image-title" style="max-width:120px; font-size:14px;">
             <a href="javascript:do_accept_image({{ image.pk }})">Accept</a><br>
-            <a href="javascript:do_delete_image({{ image.pk }})">Delete</a>
+            <a href="javascript:do_delete_image({{ image.pk }})">Delete</a><br>
+            By: {{ image.uploader.email }}
         </div></div>
         {% endfor %}
     {% endif %}

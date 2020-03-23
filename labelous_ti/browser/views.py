@@ -197,7 +197,8 @@ def review_annotations(request):
         return redirect("anno_review")
 
     annotations = Annotation.objects.order_by('pk').filter(
-        deleted=False, locked=True, finished=False, image__deleted=False)
+        deleted=False, locked=True, finished=False,
+        image__deleted=False).select_related("annotator")
 
     return render(request, "browser/review.html", 
         {"annotations": annotations})
@@ -244,7 +245,7 @@ def review_images(request):
         return redirect("image_review")
 
     images = Image.objects.order_by('pk').filter(
-        available=False, deleted=False)
+        available=False, deleted=False).select_related("uploader")
 
     return render(request, "browser/review.html", 
         {"images": images})
