@@ -1,5 +1,7 @@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+# True if logging should be configured to log to production location
+PRODUCTION_LOGS = False
 
 ALLOWED_HOSTS = []
 
@@ -16,6 +18,7 @@ DATABASES = {
         'HOST': '',
     }
 }
+
 
 # where the images are stored
 import pathlib
