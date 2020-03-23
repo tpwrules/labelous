@@ -17,7 +17,7 @@
 3.8,window
 3.6,fire alarm switch
 3.6,fire door
-3.6,fire suppression systems - extinguisher 
+3.6,fire suppression systems - extinguisher
 3.6,sign exit
 3.2,emergency lighting
 3.2,sign stop
