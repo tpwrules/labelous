@@ -43,7 +43,9 @@ resources.update([
 objects = []
 with open(script_dir/"label_priorities.txt", "r") as priorities:
     for obj in priorities.readlines():
-        objects.append(obj.split(",", 1)[1][:-1])
+        if obj == "" or obj == "\n": continue
+        if obj.endswith("\n"): obj = obj[:-1]
+        objects.append(obj.split(",", 1)[1])
 objects.sort()
 obj_script = ['<script type="text/javascript">']
 obj_script.append("var object_choices = [")
