@@ -2,7 +2,9 @@
 {% block body %}
 <div id="left">
     <ul class="menu">
+        {% if request.user.is_authenticated %}
         <li><a href="{% url 'account_stats' %}"{% if request.resolver_match.url_name == "account_stats" %} class="active"{% endif %}>Account Statistics</a></li>
+        {% endif %}
         <li><a href="{% url 'account_changepw' %}"{% if request.resolver_match.url_name == "account_changepw" %} class="active"{% endif %}>Change Password</a></li>
         {% if perms.browser.account_manager %}
         <li><a href="{% url 'account_create' %}"{% if request.resolver_match.url_name == "account_create" %} class="active"{% endif %}>Create Account</a></li>
@@ -47,6 +49,9 @@
             Points from approved images: {{ points_from_images|floatformat }}<br />
             Total points: {{ total_points|floatformat }}<br />
         {% elif request.resolver_match.url_name == "account_changepw" %}
+            {% if changed_password %}
+            Your password was changed successfully. Please <a href="{% url 'login' %}">log in</a> with your new password.
+            {% else %}
             {% if request.user.is_authenticated %}
             Please enter your current password, then your new password twice (to prevent mistakes).
             {% else %}
@@ -76,6 +81,7 @@
                 <br />
                 <input type="submit" value="Change Password" />
             </form>
+            {% endif %}
         {% elif request.resolver_match.url_name == "account_create" %}
             Enter the e-mail of the user to create. Once the account is created, you must give the resulting link to the user so they can set their password.
             <form method="post">

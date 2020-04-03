@@ -329,9 +329,8 @@ def do_changepw(request):
     user.set_password(new_pw1)
     user.password_reset_token = None
     user.save()
-    messages.add_message(request, messages.SUCCESS,
-        "Password changed successfully.") 
 
+    return True
 
 def account_changepw(request):
     try:
@@ -339,12 +338,15 @@ def account_changepw(request):
     except KeyError:
         password_reset_token = ""
 
+    changed_password = False
     if request.method == "POST":
-        do_changepw(request)
+        if do_changepw(request) is True:
+            changed_password = True
 
     return render(request, "browser/account.html",
         {"password_helps": password_validators_help_texts(),
-         "password_reset_token": password_reset_token})
+         "password_reset_token": password_reset_token,
+         "changed_password": changed_password})
 
 # make a reset token, set it on the user, then return the display version
 def set_reset_token(user):
