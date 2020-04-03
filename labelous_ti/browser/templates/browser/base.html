@@ -21,7 +21,7 @@
                 <a href="{% url 'annos_in_progress' %}"><img src="{% static 'label_app/LabelMe_logo3.png' %}" width="216" height="69" alt="LabelMe logo"></a>
                 <br />
                 {% if request.user.is_authenticated %}
-                <a href="{% url 'account_info' %}">{{ request.user.email }}</a>
+                <a href="{% url 'account_stats' %}">{{ request.user.email }}</a>
                 <br />
                 <a href="{% url 'logout' %}">Log Out</a>
                 {% else %}
@@ -34,7 +34,7 @@
                     {% if perms.browser.reviewer %}
                     <li><a href="{% url 'anno_review' %}"{% if request.resolver_match.url_name == "anno_review" %} class="active"{% endif %}{% if request.resolver_match.url_name == "image_review" %} class="active"{% endif %}>Review</a></li>
                     {% endif %}
-                    <li><a href="{% if request.user.is_authenticated %}{% url 'account_info' %}{% else %}{% url 'account_changepw' %}{% endif %}"{% if request.resolver_match.url_name|slice:":8" == "account_" %} class="active"{% endif %}>Account</a></li>
+                    <li><a href="{% if request.user.is_authenticated %}{% url 'account_stats' %}{% else %}{% url 'account_changepw' %}{% endif %}"{% if request.resolver_match.url_name|slice:":8" == "account_" %} class="active"{% endif %}>Account</a></li>
                     <li><a href="{% url 'credits_page' %}"{% if request.resolver_match.url_name == "credits_page" %} class="active"{% endif %}>Credits</a></li>
                 </ul>
             </div>

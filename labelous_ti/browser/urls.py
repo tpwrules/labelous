@@ -23,8 +23,8 @@ urlpatterns = [
     path('', auth_views.LoginView.as_view(
         redirect_authenticated_user=True), name="login"),
     path('account/logout/', auth_views.LogoutView.as_view(), name="logout"),
-    path('account/info/', login_required(views.account_info),
-        name="account_info"),
+    path('account/stats/', login_required(views.account_stats),
+        name="account_stats"),
     path('account/changepw/', views.account_changepw,
         name="account_changepw"),
     path('account/create/', login_required(views.account_create),

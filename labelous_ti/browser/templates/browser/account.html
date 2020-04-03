@@ -2,7 +2,7 @@
 {% block body %}
 <div id="left">
     <ul class="menu">
-        <li><a href="{% url 'account_info' %}"{% if request.resolver_match.url_name == "account_info" %} class="active"{% endif %}>Account Information</a></li>
+        <li><a href="{% url 'account_stats' %}"{% if request.resolver_match.url_name == "account_stats" %} class="active"{% endif %}>Account Statistics</a></li>
         <li><a href="{% url 'account_changepw' %}"{% if request.resolver_match.url_name == "account_changepw" %} class="active"{% endif %}>Change Password</a></li>
         {% if perms.browser.account_manager %}
         <li><a href="{% url 'account_create' %}"{% if request.resolver_match.url_name == "account_create" %} class="active"{% endif %}>Create Account</a></li>
@@ -13,8 +13,8 @@
 <div id="content">
     <div id="topCenter">
         <div id="pathway" style="width:100%; height:100%; margin-bottom:20px;">
-        {% if request.resolver_match.url_name == "account_info" %}
-            Account Information
+        {% if request.resolver_match.url_name == "account_stats" %}
+            Account Statistics
         {% elif request.resolver_match.url_name == "account_changepw" %}
             Change Password
         {% elif request.resolver_match.url_name == "account_create" %}
@@ -33,7 +33,7 @@
     </div>
 
     <div>
-        {% if request.resolver_match.url_name == "account_info" %}
+        {% if request.resolver_match.url_name == "account_stats" %}
             {% if perms.browser.account_manager %}
             <form method="get">
                 <label for="user">User e-mail: </label>

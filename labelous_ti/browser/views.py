@@ -251,7 +251,7 @@ def review_images(request):
         {"images": images})
 
 
-def account_info(request):
+def account_stats(request):
     user = request.user
     if "user" in request.GET and request.GET["user"] != "":
         if request.user.has_perm("browser.account_manager"):
