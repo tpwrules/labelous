@@ -45,10 +45,10 @@ function do_accept_anno(anno_id) {
         <div id="pathway" style="width:100%; height:100%; margin-bottom:20px;">
         {% if request.resolver_match.url_name == "anno_review" %}
             Annotations Submitted for Review
-            <span class="sub_pathway"><br>Click on an annotation to view it, then accept or reject it. Click "Edit" to make changes.</span>
+            <span class="sub_pathway"><br>{% if annotations|length == 0 %}Wait for users to submit annotations for review.{% else %}Click on an annotation to view it, then accept or reject it. Click "Edit" to make changes.{% endif %}</span>
         {% elif request.resolver_match.url_name == "image_review" %}
             Images Awaiting Review 
-            <span class="sub_pathway"><br>Click on an image to view it, then accept or delete it.</span>
+            <span class="sub_pathway"><br>{% if images|length == 0 %}Wait for users to submit images for review.{% else %}Click on an image to view it, then accept or delete it.{% endif %}</span>
         {% endif %}
     {% if messages %}
     <ul style="color:#000;">
