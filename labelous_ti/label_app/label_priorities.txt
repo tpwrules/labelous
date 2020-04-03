@@ -3,10 +3,12 @@
 4.8,utility shut offs - gas
 4.8,utility shut offs - water
 4.6,building entrance-exit
+4.6,door
 4.6,fire hydrant
 4.4,fire escape access
 4.4,roof access
 4.4,stairway
+4.2,elevator
 4,fire alarm
 4,fire wall
 4,mechanical equipment
@@ -25,3 +27,4 @@
 3,AED (Automated External Defibrillators)
 3,IFAK (Individual First Aid Kit)
 2.4,server equipment
+2,person
