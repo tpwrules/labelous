@@ -91,7 +91,7 @@
                 <input type="submit" value="Create" />
             </form>
             {% if token_url %}
-            <p><b>Direct the user to {{ token_url }} so they can set their password and log in.</b></p>
+            <p><b>Token for user {{ user_email }} generated successfully. Direct the user to {{ token_url }} so they can set their password and log in.</b></p>
             {% endif %}
         {% elif request.resolver_match.url_name == "account_maketoken" %}
             Enter the e-mail of the user whose password needs to be reset. You must give the resulting link to the user so they can reset their password. Their password will not be changed unless they use the token.
@@ -102,7 +102,7 @@
                 <input type="submit" value="Reset" />
             </form>
             {% if token_url %}
-            <p><b>Direct the user to {{ token_url }} so they can reset their password and log in.</b></p>
+            <p><b>Token for user {{ user_email }} generated successfully. Direct the user to {{ token_url }} so they can reset their password and log in.</b></p>
             {% endif %}
         {% endif %}
     </div>

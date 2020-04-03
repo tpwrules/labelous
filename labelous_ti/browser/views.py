@@ -4,6 +4,7 @@ from django.core.exceptions import SuspiciousOperation, ValidationError
 from django.contrib import messages
 from django.db.models import OuterRef, Exists, Sum
 from django.db import IntegrityError, transaction
+from django.contrib.auth.models import BaseUserManager
 from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.password_validation import (
     validate_password, password_validators_help_texts)
@@ -360,14 +361,16 @@ def do_create_account(request):
     # create reset token so user can change their password
     reset_token = set_reset_token(new_user)
     new_user.save()
-    return reset_token
+    # get email back from user object after it's been normalized and whatever
+    return new_user.email, reset_token
 
 @permission_required("browser.account_manager", raise_exception=True)
 def account_create(request):
     token_url = None
+    user_email = None
     if request.method == "POST":
         try:
-            reset_token = do_create_account(request)
+            user_email, reset_token = do_create_account(request)
             token_url = request.build_absolute_uri(
                 reverse("account_changepw")+"?token="+reset_token)
         except IntegrityError:
@@ -378,14 +381,19 @@ def account_create(request):
                 "User created successfully.")
 
     return render(request, "browser/account.html",
-        {"token_url": token_url})
+        {"token_url": token_url,
+         "user_email": user_email})
 
 @permission_required("browser.account_manager", raise_exception=True)
 def account_maketoken(request):
     token_url = None
+    user_email = None
     if request.method == "POST":
         try:
-            user = User.objects.get(email=request.POST["reset_email"])
+            # normalize email so we get the right user
+            user_email = BaseUserManager.normalize_email(
+                request.POST["reset_email"])
+            user = User.objects.get(email=user_email)
         except User.DoesNotExist:
             messages.add_message(request, messages.ERROR,
                 "User doesn't exist.")
@@ -396,4 +404,5 @@ def account_maketoken(request):
                 reverse("account_changepw")+"?token="+reset_token)
 
     return render(request, "browser/account.html",
-        {"token_url": token_url})
+        {"token_url": token_url,
+         "user_email": user_email})
