@@ -42,6 +42,10 @@
             </form>
             {% endif %}
             E-mail: {{ info_email }}<br />
+            <br />
+            Points from finished annotations: {{ points_from_annos|floatformat }}<br />
+            Points from approved images: {{ points_from_images|floatformat }}<br />
+            Total points: {{ total_points|floatformat }}<br />
         {% elif request.resolver_match.url_name == "account_changepw" %}
             {% if request.user.is_authenticated %}
             Please enter your current password, then your new password twice (to prevent mistakes).

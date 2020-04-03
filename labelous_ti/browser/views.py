@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, reverse
 from django.http import HttpResponse, Http404
 from django.core.exceptions import SuspiciousOperation, ValidationError
 from django.contrib import messages
-from django.db.models import OuterRef, Exists
+from django.db.models import OuterRef, Exists, Sum
 from django.db import IntegrityError, transaction
 from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.password_validation import (
@@ -267,8 +267,22 @@ def account_stats(request):
             messages.add_message(request, messages.ERROR,
                 "Mind your own business.")
 
+    annos = Annotation.objects.filter(annotator=user, finished=True,
+        deleted=False)
+    points_from_annos = annos.aggregate(points=Sum('score'))["points"]
+    # for some reason, aggregates return None if there are no objects
+    if points_from_annos is None: points_from_annos = 0
+
+    images = Image.objects.filter(uploader=user, available=True, deleted=False)
+    points_from_images = images.count() * 2
+
+    total_points = points_from_annos + points_from_images
+
     return render(request, "browser/account.html",
-        {"info_email": user.email})
+        {"info_email": user.email,
+        "points_from_annos": points_from_annos,
+        "points_from_images": points_from_images,
+        "total_points": total_points})
 
 def do_changepw(request):
     if request.user.is_authenticated:
