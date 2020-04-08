@@ -196,9 +196,9 @@ def get_annotation_xml(request, filename):
         # if deleted is 1, the polygon won't show up. we avoid sending deleted
         # polygons, so there's no case it would be set to 1.
         # if verified is 1, the polygon will show an error if the user tries to
-        # edit it. we map this to the polygon's locked status.
+        # edit it. we set the flag when the user is only allowed to view it.
         xml.append("<deleted>0</deleted><verified>{}</verified>".format(
-            1 if polygon.locked or annotation.locked else 0))
+            1 if nd.view else 0))
         # whether the user considers the polygon to be occluded. same as
         # database flag.
         xml.append("<occluded>{}</occluded>".format(
