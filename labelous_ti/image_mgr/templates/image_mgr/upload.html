@@ -10,11 +10,15 @@
     </ul>
     {% endif %}
     <p>Please note that the image must be in JPEG format. The minimum allowed image dimensions are 720x720 pixels and the maximum allowed image filesize is 10MiB.</p>
+    {% if request.user.can_upload_images %}
     <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         <input type="file" name="the_image">
         <input type="submit" value="Submit">
     </form>
+    {% else %}
+    <p><b style="font-size:20px;">Image submission is closed until the contest officially opens on 2020-04-14. Please keep these guidelines in mind as you search for images.</b></p>
+    {% endif %}
     <br />
     <div>
         <p>Upload Guidelines</p>

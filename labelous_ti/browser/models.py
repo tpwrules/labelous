@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 
+import datetime
+
 # ripped off of django's
 class UserManager(BaseUserManager):
     def _create_user(self, email, password, **extra_fields):
@@ -44,3 +46,12 @@ class User(AbstractUser):
             ("reviewer", "Can review others' annotations."),
             ("account_manager", "Can create accounts and reset passwords."),
         ]
+
+    def can_upload_images(self):
+        # the contest opens on april 14 and we only want us to be able to upload
+        # images before then (for testing purposes)
+        if self.pk < 10: # all of us
+            return True
+
+        open_date = datetime.datetime(2020, 4, 14, 0, 0, 0)
+        return (datetime.datetime.now() > open_date)

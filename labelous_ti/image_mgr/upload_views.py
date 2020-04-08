@@ -77,7 +77,11 @@ def upload_image(request):
 @csrf_protect
 def upload_image_view(request):
     if request.method == "POST":
-        upload_image_post(request)
+        if request.user.can_upload_images():
+            # they can't only if they somehow forged a post request while image
+            # submission was closed. so we don't bother showing an error, we
+            # just don't do it.
+            upload_image_post(request)
         return redirect("upload_image")
 
     return render(request, "image_mgr/upload.html")
