@@ -55,6 +55,13 @@ obj_script.append("]")
 obj_script.append("</script>")
 tool = tool.replace("<!--OBJECT_LIST-->", "\n".join(obj_script))
 
+# give the user the link back to the annotation instructions. we do this here so
+# the (generic) tool isn't specific to map901.
+tool = tool.replace("<!--GUIDELINES_LINK-->",
+    "<b>Please Read: "
+    "<a href='http://map901.memphis.edu/map901_contest_instructions.php'>"
+    "Map901 Contest Annotation Instructions</a></b><br /><br />")
+
 # now we need to update the tool page with the new static links we're gonna make
 def to_static(path):
     return "/static/label_app/"+path.split("/")[-1]
