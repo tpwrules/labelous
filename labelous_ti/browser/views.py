@@ -268,22 +268,34 @@ def account_stats(request):
             messages.add_message(request, messages.ERROR,
                 "Mind your own business.")
 
-    annos = Annotation.objects.filter(annotator=user, finished=True,
-        deleted=False)
-    points_from_annos = annos.aggregate(points=Sum('score'))["points"]
+    annos = Annotation.objects.filter(annotator=user, deleted=False)
+    inprogress_points = annos.filter(locked=False, finished=False).aggregate(
+        points=Sum('score'))["points"]
+    pending_points = annos.filter(locked=True, finished=False).aggregate(
+        points=Sum('score'))["points"]
+    finished_points = annos.filter(finished=True).aggregate(
+        points=Sum('score'))["points"]
     # for some reason, aggregates return None if there are no objects
-    if points_from_annos is None: points_from_annos = 0
+    if inprogress_points is None: inprogress_points = 0
+    if pending_points is None: pending_points = 0
+    if finished_points is None: finished_points = 0
 
     images = Image.objects.filter(uploader=user, available=True, deleted=False)
-    points_from_images = images.count() * 2
+    image_points = images.count() * 2
 
-    total_points = points_from_annos + points_from_images
+    total_prelim_points = inprogress_points + pending_points
+    total_points = finished_points + image_points
 
     return render(request, "browser/account.html",
         {"info_email": user.email,
-        "points_from_annos": points_from_annos,
-        "points_from_images": points_from_images,
-        "total_points": total_points})
+
+         "inprogress_points": inprogress_points,
+         "pending_points": pending_points,
+         "total_prelim_points": total_prelim_points,
+
+         "finished_points": finished_points,
+         "image_points": image_points,
+         "total_points": total_points})
 
 def do_changepw(request):
     if request.user.is_authenticated:
