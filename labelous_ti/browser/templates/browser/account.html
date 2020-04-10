@@ -14,7 +14,7 @@
 </div>
 <div id="content">
     <div id="topCenter">
-        <div id="pathway" style="width:100%; height:100%; margin-bottom:20px;">
+        <div id="pathway">
         {% if request.resolver_match.url_name == "account_stats" %}
             Account Statistics
         {% elif request.resolver_match.url_name == "account_changepw" %}
@@ -25,9 +25,9 @@
             Generate Password Reset Token
         {% endif %}
     {% if messages %}
-    <ul style="color:#000;">
+    <ul id="messages">
         {% for message in messages %}
-        <li style="margin-bottom:0em;">{{ message }}</li>
+        <li>{{ message }}</li>
         {% endfor %}
     </ul>
     {% endif %}

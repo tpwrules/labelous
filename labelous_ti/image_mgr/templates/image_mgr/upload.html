@@ -3,9 +3,9 @@
 <div id="content">
     <h1 class="title">Upload Image</h1>
     {% if messages %}
-    <ul style="color:#000;">
+    <ul id="messages">
         {% for message in messages %}
-        <li style="margin-bottom:0em;">{{ message }}</li>
+        <li>{{ message }}</li>
         {% endfor %}
     </ul>
     {% endif %}
