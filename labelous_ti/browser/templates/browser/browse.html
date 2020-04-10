@@ -76,7 +76,7 @@ function do_unreview(anno_id) {
             <a href="javascript:do_unreview({{ anno.pk }})">Cancel Review</a>
         {% elif request.resolver_match.url_name == "annos_finished" %}
             Final Score: {{ anno.score|floatformat }}
-        {% endif %}</div></div>
+        {% endif %}{% if anno.comment %}<br><b>Comment:</b> {{ anno.comment }}{% endif %}</div></div>
         {% endfor %}
     </div>
 </div>

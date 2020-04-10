@@ -156,6 +156,7 @@ def review_annotations(request):
         try:
             action = request.POST["action"]
             anno_id = int(request.POST["item_id"])
+            comment = request.POST["comment"]
             if action not in ("accept_anno", "reject_anno"):
                 raise Exception("invalid action {}".format(action))
         except Exception as e:
@@ -169,6 +170,7 @@ def review_annotations(request):
                 annotation = Annotation.objects.select_for_update().get(
                     pk=anno_id, deleted=False, finished=False)
 
+                annotation.comment = comment
                 if action == "accept_anno":
                     if not annotation.locked:
                         raise ModificationFailure(

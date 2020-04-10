@@ -16,13 +16,25 @@ function do_accept_image(image_id) {
         do_modify("accept_image", image_id);
     }
 }
+function get_curr_comment(anno_id) {
+    var e = document.getElementById("c_"+anno_id);
+    if (e === null) {
+        return "";
+    } else {
+        return e.innerHTML;
+    }
+}
 function do_reject_anno(anno_id) {
-    if (confirm("This annotation will be returned for editing. Return?")) {
+    var new_comment = prompt("Enter a comment for the returned annotation (or blank for no comment). Return?", get_curr_comment(anno_id));
+    if (new_comment !== null) {
+        document.getElementById("modify_comment").value = new_comment;
         do_modify("reject_anno", anno_id);
     }
 }
 function do_accept_anno(anno_id) {
-    if (confirm("This annotation will be approved and no more editing will be possible. Approve?")) {
+    var new_comment = prompt("Enter a comment for the accepted annotation (or blank for no comment). Accept?", get_curr_comment(anno_id));
+    if (new_comment !== null) {
+        document.getElementById("modify_comment").value = new_comment;
         do_modify("accept_anno", anno_id);
     }
 }
@@ -33,6 +45,7 @@ function do_accept_anno(anno_id) {
     {% csrf_token %}
     <input type="hidden" name="action" id="modify_action" value="nothing">
     <input type="hidden" name="item_id" id="modify_item_id" value="none">
+    <input type="hidden" name="comment" id="modify_comment" value="">
 </form>
 <div id="left">
     <ul class="menu">
@@ -70,6 +83,7 @@ function do_accept_anno(anno_id) {
             <a href="{{ anno.edit_url }}">Edit</a><br>
             <a href="javascript:do_reject_anno({{ anno.pk }})">Reject</a><br>
             By: {{ anno.annotator.email }}
+            {% if anno.comment %}<br><b>Comment:</b> <span id="c_{{ anno.pk }}">{{ anno.comment }}</span>{% endif %}
         </div></div>
         {% endfor %}
     {% elif request.resolver_match.url_name == "image_review" %}

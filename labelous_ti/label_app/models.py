@@ -38,6 +38,8 @@ class Annotation(models.Model):
     # total score of all the objects in the annotation. calculated when the xml
     # is submitted.
     score = models.FloatField(default=0)
+    # comment added by a reviewer and shown under the annotation
+    comment = models.CharField(max_length=255, blank=True)
 
     # return the url that goes to the tool to edit this annotation
     @property
