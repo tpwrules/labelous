@@ -107,10 +107,11 @@ def upload_image_post(request):
         return
     # it may still not be a jpeg even though the header claims so!
 
-    # but we let the processor handle that possibility. it returns whether or
-    # not the image was new, or raises an exception if something went wrong.
+    # but we let the processor handle that possibility. it returns the new Image
+    # (or None if the image wasn't new), or raises an exception if something
+    # went wrong.
     try:
-        was_new = process_image(uploader=request.user,
+        new_image = process_image(uploader=request.user,
             name=the_image.name, orig_data=the_image_data)
     except ProcessingFailure as e:
         print(str(e))
@@ -123,7 +124,7 @@ def upload_image_post(request):
             str(e)+" Please mind the upload guidelines.")
         return
 
-    if was_new:
+    if new_image is not None:
         messages.add_message(request, messages.SUCCESS,
             "Thank you for your submission. The image will be reviewed"
             " by a moderator before it is available for annotation.")

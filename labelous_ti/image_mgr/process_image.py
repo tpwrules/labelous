@@ -210,9 +210,9 @@ def make_thumbnail(image_data):
     return (orig_size, thumb_data, thumb.size)
 
 
-# returns True if an image is new, False if it's already in the database
-# (ignoring whether or not it was ever processed), or raises an exception if it
-# could not be processed
+# returns the created Image if the image was new, None if it's already in the
+# database (ignoring whether or not it was ever processed), or raises an
+# exception if it could not be processed
 def process_image(uploader, name, orig_data):
     # perofrm basic sanity and validity checks
 
@@ -235,8 +235,8 @@ def process_image(uploader, name, orig_data):
             image_x=0, image_y=0)
         image.save()
     except IntegrityError:
-        # guess it wasn't unique... tell the caller
-        return False
+        # guess it wasn't unique... we have no new image to return
+        return None
 
     # try and read the EXIF orientation from the image. some cameras produce a
     # sideways image, then set the tag to tell the viewer to rotate it
@@ -301,4 +301,5 @@ def process_image(uploader, name, orig_data):
             except:
                 pass
 
-    return True
+    # give back the image we made
+    return image
