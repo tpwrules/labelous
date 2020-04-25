@@ -33,15 +33,16 @@ class Command(BaseCommand):
                 score = sum(object_scores.get(p.label_as_str, 0) for p in polys)
 
                 if anno.finished:
-                    state = "finished"
+                    status = "finished"
                 elif anno.locked:
-                    state = "awaiting review"
+                    status = "awaiting review"
                 else:
-                    state = "in progress"
+                    status = "in progress"
 
-                if anno.score != score:
-                    print("by:", anno.annotator.email, state,
-                        anno.score, score)
+                if abs(anno.score - score) > 0.01:
+                    print("by:{} status:{} {:.1f}->{:.1f}".format(
+                        anno.annotator.email, status,
+                        anno.score, score))
 
                     # save the updated score back to the database. we don't
                     # change the edit key because a) we've calculated an
