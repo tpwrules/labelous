@@ -13,6 +13,7 @@
 4,fire wall
 4,mechanical equipment
 3.8,fire suppression systems - sprinkler
+3.8,fire suppression systems - sprinkler cover/escutcheon
 3.8,fixed equipment
 3.8,interior structural features - pillar
 3.8,standpipe connection
