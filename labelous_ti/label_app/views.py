@@ -389,8 +389,9 @@ def process_annotation_xml(request, root):
                             annotation=annotation, anno_index=anno_poly.index)
                         polygon_changed = True
 
-            # labels not on the list get a score of 0
-            total_score += object_scores.get(anno_poly.name, 0)
+            if not anno_poly.deleted:
+                # labels not on the list get a score of 0
+                total_score += object_scores.get(anno_poly.name, 0)
 
             if polygon_changed == True: pass
             elif poly.label_as_str != anno_poly.name: polygon_changed = True
