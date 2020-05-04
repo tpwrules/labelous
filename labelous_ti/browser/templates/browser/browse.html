@@ -36,6 +36,7 @@ function do_unreview(anno_id) {
     </ul>
 </div>
 <div id="content">
+    {% if request.resolver_match.url_name != "contest_closed" %}
     <div id="topCenter">
         <div id="pathway">
         {% if request.resolver_match.url_name == "annos_in_progress" %}
@@ -79,5 +80,11 @@ function do_unreview(anno_id) {
         {% endif %}{% if anno.comment %}<br><b>Comment:</b> {{ anno.comment }}{% endif %}</div></div>
         {% endfor %}
     </div>
+    {% else %}
+    <h1 class="title">Contest is Closed</h1>
+    <p>As of 11:59:59PM on 2020-05-05, the contest is officially closed. Thank you for your participation. Because the contest is closed, you may not upload any images, edit any in-progress annotations, or submit any annotations for review.</p>
+    <p>Any annotations submitted for review before the contest was closed will still be reviewed by an adminstrator. Reviewed annotations, if accepted, will still count towards your final score.</p>
+    <p>Please continue to check your e-mail for information regarding contest prizes.</p>
+    {% endif %}
 </div>
 {% endblock %}

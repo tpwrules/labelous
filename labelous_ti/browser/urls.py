@@ -14,6 +14,8 @@ urlpatterns = [
         name="annos_pending_review"),
     path('browse/finished/', login_required(views.browse_view),
         name="annos_finished"),
+    path('browse/closed/', login_required(views.browse_view),
+        name="contest_closed"),
 
     path('review/annotations/', login_required(views.review_annotations),
         name="anno_review"),

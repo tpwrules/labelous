@@ -15,6 +15,7 @@ import secrets
 import pathlib
 import time
 
+from labelous import contest_status
 from .models import Annotation, Polygon
 from image_mgr.models import Image, THUMBNAIL_SIZE
 from .filename_smuggler import *
@@ -107,6 +108,7 @@ class IncorrectPermissions(SuspiciousOperation):
 # the permissions aren't correct, or returns if they are.
 def require_anno_perms(user, annotation, perms):
     is_reviewer = user.has_perm("browser.reviewer")
+    contest_is_open = contest_status.is_contest_open()
 
     if perms == "view":
         if annotation.annotator == user:
@@ -120,6 +122,12 @@ def require_anno_perms(user, annotation, perms):
         # finished annotations are so termed because they can't be edited
         if annotation.finished:
             raise IncorrectPermissions("can't edit finished anno")
+
+        if not contest_is_open:
+            # people can't edit annotations after the contest closes, unless
+            # they are a reviewer editing annotations under review
+            if not is_reviewer or not annotation.locked:
+                raise IncorrectPermissions("can't edit when contest is closed")
 
         # when waiting for review, annotations are locked. thus, if an
         # annotation is not locked, only the owner can edit it. if an annotation

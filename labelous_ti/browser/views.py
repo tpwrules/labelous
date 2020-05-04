@@ -13,6 +13,7 @@ from django.contrib.auth import authenticate
 from datetime import datetime, timezone
 import secrets
 
+from labelous import contest_status
 from .models import User
 from image_mgr.models import Image
 from label_app.models import Annotation
@@ -23,10 +24,24 @@ def credits_page(request):
 # show all the annotations the user has and give them options to edit the
 # annotation or otherwise modify them
 def browse_view(request):
+    view_mode = request.resolver_match.url_name
+    contest_is_open = contest_status.is_contest_open()
+
+    # once closed, only finished annotations can be viewed (and nothing can be
+    # modified)
+    if view_mode != "contest_closed" and not contest_is_open:
+        if view_mode != "annos_finished" or request.method == "POST":
+            return redirect("contest_closed")
+
+    if view_mode == "contest_closed":
+        if contest_is_open:
+            return redirect("annos_in_progress")
+        else:
+            return render(request, "browser/browse.html")
+
     if request.method == "POST":
         return handle_browse_modify(request)
 
-    view_mode = request.resolver_match.url_name
     if view_mode == "annos_in_progress":
         locked = False
         finished = False
