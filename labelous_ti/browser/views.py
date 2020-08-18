@@ -10,7 +10,6 @@ from django.contrib.auth.password_validation import (
     validate_password, password_validators_help_texts)
 from django.contrib.auth import authenticate
 
-from datetime import datetime, timezone
 import secrets
 
 from labelous import contest_status
@@ -98,7 +97,7 @@ def handle_browse_modify(request):
                 # now we can create an annotation for that image
                 new_anno = Annotation(
                     annotator=request.user, image=new_image,
-                    edit_key=b"", last_edit_time=datetime.now(timezone.utc))
+                    edit_key=b"", last_edit_time=request.when)
                 new_anno.save()
                 # mark that the image has another annotation attached
                 new_image.num_annotations += 1

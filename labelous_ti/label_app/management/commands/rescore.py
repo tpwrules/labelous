@@ -2,8 +2,7 @@
 
 from django.db import transaction
 from django.core.management.base import BaseCommand, CommandError
-
-from datetime import datetime, timezone
+from django.utils import timezone
 
 from browser.models import User
 from label_app.models import Annotation, Polygon
@@ -18,6 +17,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         do_save = options["save"]
+        edit_time = timezone.now()
 
         object_scores = load_object_scores()
 
@@ -50,6 +50,6 @@ class Command(BaseCommand):
                     # annotation right now and b) edits will recalculate the
                     # score anyway.
                     if do_save:
-                        anno.last_edit_time = datetime.now(timezone.utc)
+                        anno.last_edit_time = edit_time
                         anno.score = score
                         anno.save()

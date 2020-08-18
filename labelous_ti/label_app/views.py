@@ -10,7 +10,6 @@ from django.shortcuts import render
 from xml.sax.saxutils import escape as xml_escape
 import defusedxml.ElementTree
 import types
-from datetime import datetime, timezone
 import secrets
 import pathlib
 import time
@@ -415,13 +414,13 @@ def process_annotation_xml(request, root):
                 poly.occluded = anno_poly.occluded
                 poly.points = anno_poly.points
                 poly.deleted = anno_poly.deleted
-                poly.last_edit_time = datetime.now(timezone.utc)
+                poly.last_edit_time = request.when
                 # we could batch save the polygons but typically only one
                 # polygon gets changed per request
                 poly.save()
 
         annotation.score = total_score
-        annotation.last_edit_time = datetime.now(timezone.utc)
+        annotation.last_edit_time = request.when
         annotation.edit_version = edit_version
         annotation.save()
 
