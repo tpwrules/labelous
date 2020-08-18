@@ -1,0 +1,65 @@
+install python 3.8
+apt install python3.8 python3.8-venv python3.8-dev python3.8-distutils
+install postgres 12
+apt install postgresql-12 libpq-dev
+
+create dir structure
+/root/app_dir/image_storage
+/root/app_dir/static_storage
+/root/app_dir/logs
+
+create venv in app_dir
+python3 -m venv venv
+source venv/bin/activate
+python3 -m pip install -U pip
+
+clone gits into app_dir
+git clone --recursive https://github.com/tpwrules/labelous
+git clone --recursive https://github.com/mozilla/mozjpeg
+
+build mozjpeg (in repo)
+apt install build-essential cmake nasm
+mkdir build
+cd build
+export CMAKE_ASM_NASM_COMPILER=`which nasm`
+cmake -G"Unix Makefiles" -DPNG_SUPPORTED=0 ..
+make -j4 jpegtran
+
+set up database
+su postgres
+psql
+CREATE DATABASE labelous;
+CREATE USER labelous_login WITH PASSWORD 'whatever';
+ALTER ROLE labelous_login SET client_encoding TO 'utf8';
+ALTER ROLE labelous_login SET default_transaction_isolation TO 'read committed';
+ALTER ROLE labelous_login SET timezone TO 'UTC';
+GRANT ALL PRIVILEGES ON DATABASE labelous TO labelous_login;
+\q
+
+set up local settings with above info
+
+install python packages
+python3 -m pip install setuptools wheel psycopg2 django django-compressor Pillow piexif defusedxml uwsgi
+
+set up app
+python3 manage.py migrate
+python3 manage.py createsuperuser
+cd label_app
+mkdir -p templates/label_app static/label_app
+python3 gather_tool.py
+cd ..
+python3 manage.py collectstatic
+python3 manage.py compress
+
+test (with debug on)
+python3 manage.py runserver 0.0.0.0:8000
+
+install and set up webserver and certbot
+apt install nginx certbot python3-certbot-nginx
+ln -s /root/app_dir/labelous/labelous_ti/labelous/labelous_nginx.conf /etc/nginx/sites-enabled/
+certbot --nginx
+
+run the server
+chmod 755 /root # just once
+uwsgi --ini ~/app_dir/labelous/labelous_ti/labelous/labelous_uwsgi.ini
+
