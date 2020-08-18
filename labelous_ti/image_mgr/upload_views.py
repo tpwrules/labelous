@@ -12,7 +12,7 @@ from django.core.files.uploadhandler import (
 import shutil
 import io
 
-from labelous import contest_status
+from labelous import contest_info
 from .models import Image
 from label_app.filename_smuggler import *
 from .process_image import (process_image, MAX_IMAGE_SIZE,
@@ -77,19 +77,21 @@ def upload_image(request):
 # ...but the function that does the actual work is still fully protected
 @csrf_protect
 def upload_image_view(request):
-    contest_is_open = contest_status.is_contest_open()
-    if not contest_is_open:
+    if contest_info.has_closed(request.when):
         return redirect("contest_closed")
 
+    can_upload = request.user.can_upload_images(request.when)
     if request.method == "POST":
-        if request.user.can_upload_images() and contest_is_open:
+        if can_upload:
             # they can't only if they somehow forged a post request while image
             # submission was closed. so we don't bother showing an error, we
             # just don't do it.
             upload_image_post(request)
         return redirect("upload_image")
 
-    return render(request, "image_mgr/upload.html")
+    return render(request, "image_mgr/upload.html",
+        {"can_upload": can_upload,
+         "open_date": contest_info.open_date})
 
 def upload_image_post(request):
     # first, check that the file is okay

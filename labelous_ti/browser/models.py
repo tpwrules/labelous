@@ -3,6 +3,8 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 
 import datetime
 
+from labelous import contest_info
+
 # ripped off of django's
 class UserManager(BaseUserManager):
     def _create_user(self, email, password, **extra_fields):
@@ -47,11 +49,13 @@ class User(AbstractUser):
             ("account_manager", "Can create accounts and reset passwords."),
         ]
 
-    def can_upload_images(self):
-        # the contest opens on april 14 and we only want us to be able to upload
-        # images before then (for testing purposes)
-        if self.pk < 10: # all of us
-            return True
+    def can_upload_images(self, when):
+        # nobody can upload after closure
+        if contest_info.has_closed(when):
+            return False
 
-        open_date = datetime.datetime(2020, 4, 14, 0, 0, 0)
-        return (datetime.datetime.now() > open_date)
+        # reviewers can upload images before the contest has opened
+        if self.has_perm("browser.reviewer"):
+            return True
+        else:
+            return contest_info.has_opened(when)

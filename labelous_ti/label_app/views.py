@@ -14,7 +14,7 @@ import secrets
 import pathlib
 import time
 
-from labelous import contest_status
+from labelous import contest_info
 from .models import Annotation, Polygon
 from image_mgr.models import Image, THUMBNAIL_SIZE
 from .filename_smuggler import *
@@ -105,9 +105,8 @@ class IncorrectPermissions(SuspiciousOperation):
 # make sure the user has the required permissions on the annotation, including
 # that the annotation should actually be shown and stuff. throws an exception if
 # the permissions aren't correct, or returns if they are.
-def require_anno_perms(user, annotation, perms):
+def require_anno_perms(when, user, annotation, perms):
     is_reviewer = user.has_perm("browser.reviewer")
-    contest_is_open = contest_status.is_contest_open()
 
     if perms == "view":
         if annotation.annotator == user:
@@ -122,7 +121,7 @@ def require_anno_perms(user, annotation, perms):
         if annotation.finished:
             raise IncorrectPermissions("can't edit finished anno")
 
-        if not contest_is_open:
+        if contest_info.has_closed(when):
             # people can't edit annotations after the contest closes, unless
             # they are a reviewer editing annotations under review
             if not is_reviewer or not annotation.locked:
@@ -150,7 +149,7 @@ def get_annotation_xml(request, filename):
         nd = decode_filename(filename, anno_id=True)
         annotation = Annotation.objects.get(pk=nd.anno_id,
             deleted=False, image__deleted=False)
-        require_anno_perms(request.user, annotation,
+        require_anno_perms(request.when, request.user, annotation,
             "view" if nd.view else "edit")
     except Exception as e:
         raise Http404("Annotation does not exist.") from e
@@ -254,7 +253,7 @@ def process_annotation_xml(request, root):
             image_id=True, anno_id=True)
         annotation = Annotation.objects.get(pk=nd.anno_id, deleted=False,
             image__pk=nd.image_id, image__deleted=False)
-        require_anno_perms(request.user, annotation, "edit")
+        require_anno_perms(request.when, request.user, annotation, "edit")
     except Exception as e:
         raise SuspiciousOperation("invalid anno id") from e
 
@@ -365,7 +364,7 @@ def process_annotation_xml(request, root):
         # edit can happen.
 
         # re-verify the permissions for the same reason
-        require_anno_perms(request.user, annotation, "edit")
+        require_anno_perms(request.when, request.user, annotation, "edit")
 
         for anno_poly in anno_polygons:
             # measure if anything changed in the polygon so we can update its
@@ -546,7 +545,7 @@ def find_annotation_for_svg(request, filename):
         nd = decode_filename(filename, anno_id=True)
         annotation = Annotation.objects.get(pk=nd.anno_id,
             deleted=False, image__deleted=False)
-        require_anno_perms(request.user, annotation, "view")
+        require_anno_perms(request.when, request.user, annotation, "view")
     except Exception as e:
         raise Http404("Annotation does not exist.") from e
 
