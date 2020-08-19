@@ -285,7 +285,8 @@ def account_stats(request):
             messages.add_message(request, messages.ERROR,
                 "Mind your own business.")
 
-    annos = Annotation.objects.filter(annotator=user, deleted=False)
+    annos = Annotation.objects.filter(
+        annotator=user, deleted=False, image__deleted=False)
     inprogress_points = annos.filter(locked=False, finished=False).aggregate(
         points=Sum('score'))["points"]
     pending_points = annos.filter(locked=True, finished=False).aggregate(
