@@ -39,7 +39,8 @@ class Annotation(models.Model):
     # is submitted.
     score = models.FloatField(default=0)
     # comment added by a reviewer and shown under the annotation
-    comment = models.CharField(max_length=255, blank=True)
+    # TODO: convert to text field and remove max length
+    comment = models.CharField(max_length=2000, blank=True)
 
     # return the url that goes to the tool to edit this annotation
     @property
